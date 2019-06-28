@@ -1,0 +1,37 @@
+html, body{
+  height: 100%;
+  width: 100%;
+}
+
+a {
+  color: blue;
+  text-decoration: none;
+}
+
+#prev, #next {
+  position: absolute;
+  font-size: 20px;
+}
+
+#prev {
+  left: 20px;
+  top: 18px;
+}
+
+#next {
+  left: 30px;
+  top: 48px;
+}
+
+#squat {
+  position: absolute;
+  left: 50px;
+  top: 78px;
+  color: red;
+  font-family: Georgia;
+  font-size: 50px;
+}
+
+#published {
+  display: none;
+}
