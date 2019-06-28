@@ -1,4 +1,1 @@
-RewriteEngine on
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule . / [L,R=301]
-ErrorDocument 404 /index.html
+ErrorDocument 404 https://skalon.com
