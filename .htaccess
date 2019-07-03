@@ -1,14 +1,12 @@
-DirectorySlash Off
 RewriteEngine On
+
+# Redirect directory indexes.
+RewriteRule ^index\.html$ / [R=301,NE]
+RewriteRule ^(.*)/index\.html$ /$1/ [R=301,NE]
 
 # Enforce HTTPS.
 RewriteCond %{HTTPS} !=on
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NE]
 
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteCond %{REQUEST_FILENAME}/index.html -f
-RewriteRule (.*) $1/index.html [L,NE]
-
-# Redirect 404s and 403s to the home page.
-ErrorDocument 403 https://skalon.com
+# Redirect 404s to the home page.
 ErrorDocument 404 https://skalon.com
