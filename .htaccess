@@ -1,12 +1,28 @@
 RewriteEngine On
 
-# Redirect directory indexes.
-RewriteRule ^index\.html$ / [R=301,NE]
-RewriteRule ^(.*)/index\.html$ /$1/ [R=301,NE]
-
-# Enforce HTTPS.
+# Enforce HTTPS on all URIs.
 RewriteCond %{HTTPS} !=on
-RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NE]
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,NC,NE,R=301]
+
+# Rewrite directory indexes to their parent directories.
+RewriteRule ^index\.html$ / [L,NC,NE,R=301]
+RewriteRule ^(.*)/index\.html$ /$1/ [L,NC,NE,R=301]
+
+# Canonicalize valid directory URLs to have at least one trailing slash.
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*[^/])$ /$1/ [L,NC,NE,R=301]
+
+# Canonicalize URLs to have at most one slash in a row.
+RewriteCond %{THE_REQUEST} \s[^?]*//
+RewriteRule ^.*$ /$0 [L,NC,NE,R=301]
+
+# Proxy nonexistent root directory files to the directory of the latest post.
+RewriteRule ^/*$ /2019/06/27/ [L,NC,NE,PT]
+RewriteCond %{REQUEST_URI} !^/.*/.*$
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ /2019/06/27/$1 [L,NC,NE,PT]
 
 # Redirect 404s to the home page.
 ErrorDocument 404 https://skalon.com

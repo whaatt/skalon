@@ -1,3 +1,4 @@
+#!/bin/bash
 # File: upload.sh
 # Description: Upload content to Skalon.
 
@@ -7,9 +8,11 @@ SCRIPT_DIRECTORY=$(
     pwd -P
 )
 
-USERNAME="whaatt00"
-DOMAIN="skalon.com"
-PORT="7822"
-PATH="public_html"
+REMOTE_USERNAME="whaatt00"
+REMOTE_DOMAIN="skalon.com"
+REMOTE_PORT="7822"
+REMOTE_PATH="public_html"
 
-rsync -avz --exclude-from="$SCRIPT_DIRECTORY/.uploadignore" -e "ssh -p $PORT" . $USERNAME@$DOMAIN:$PATH
+rsync -avz --exclude-from="$SCRIPT_DIRECTORY/.uploadignore" \
+    -e "ssh -p $REMOTE_PORT" . $REMOTE_USERNAME@$REMOTE_DOMAIN:$REMOTE_PATH \
+    --delete
