@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
   height: 100%;
   width: 100%;
 }
@@ -15,15 +16,18 @@ a[disabled] {
 }
 
 #content {
+  position: relative;
   height: 100%;
   width: 100%;
   background-image: url("/img/PP.png");
   background-repeat: repeat;
   background-size: 150px;
-  font-family: "Comic Sans MS", cursive, sans-serif !important;
+  font-family: "Comic Sans MS", cursive, sans-serif;
+  overflow: hidden;
 }
 
-#prev, #next {
+#previous,
+#next {
   position: absolute;
   left: 30px;
   display: flex;
@@ -34,7 +38,7 @@ a[disabled] {
   font-size: 30px;
 }
 
-#prev {
+#previous {
   top: 90px;
   height: 62px;
   width: 90px;
