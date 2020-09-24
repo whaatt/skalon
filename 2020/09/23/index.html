@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html class="no-js" lang="en">
   <head>
-    <title>plaid</title>
+    <title>laptop accordion</title>
     <meta charset="utf-8" />
 
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <meta name="description" content="different stripes for different types" />
+    <meta name="description" content="the meme lives on" />
 
     <link
       rel="apple-touch-icon"
@@ -40,21 +40,11 @@
     <link rel="stylesheet" href="/css/vendor/normalize.css" />
     <link rel="stylesheet" href="index.css" />
   </head>
-  <body ontouchstart="">
+  <body>
+    <video id="video-input"></video>
     <div id="content">
-      <div id="next-arrow-right">
-        <a class="next" href="/2019/09/23/">Next</a>
-      </div>
-      <div id="prev-arrow-left">
-        <a class="previous" href="/2019/06/27/">Prev</a>
-      </div>
-      <div id="next-arrow-up">
-        <a class="next" href="/2019/09/23/">Next</a>
-      </div>
-      <div id="prev-arrow-down">
-        <a class="previous" href="/2019/06/27/">Prev</a>
-      </div>
-      <div id="published">27 June 2020</div>
+      <button id="start-audio">Start Audio</button>
+      <div id="published">23 September 2020</div>
     </div>
 
     <script
@@ -62,5 +52,8 @@
       src="https://www.googletagmanager.com/gtag/js?id=UA-757876-9"
     ></script>
     <script src="/js/vendor/ga.js"></script>
+    <script src="https://docs.opencv.org/3.4.0/opencv.js"></script>
+    <script src="https://surikov.github.io/webaudiofont/npm/dist/WebAudioFontPlayer.js"></script>
+    <script src="index.js" type="module"></script>
   </body>
 </html>
