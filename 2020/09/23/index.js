@@ -19,7 +19,6 @@ const CUSTOM_SONG_DIALOG = document.getElementById("custom-song-dialog");
 const SONG_PICKER_SELECT = document.getElementById("song-picker-select");
 const ROOT_PICKER_SELECT = document.getElementById("root-picker-select");
 const SCALE_PICKER_SELECT = document.getElementById("scale-picker-select");
-const ARTICULATION_BAR = document.getElementById("articulation-bar");
 
 // Audio constants:
 const DEFAULT_VOLUME = 0.1;
@@ -277,15 +276,6 @@ const runCaptureLoop = (width, height) => {
       // Set accordion volume based on articulation.
       const articulation = flow.getArticulation();
       synth.setVolume(articulation * ARTICULATION_SCALE_FACTOR);
-
-      // Update articulation level bar.
-      const percentage = articulation * 100;
-      ARTICULATION_BAR.style.background =
-        "linear-gradient(to right, transparent 0%, transparent " +
-        percentage +
-        "%, #333 " +
-        percentage +
-        "%), linear-gradient(to right, #ca4dbb 0%, #cab74d 50%, #7cca4d 100%)";
     }
 
     // Ensure that we grab frames no faster than 60 FPS.
