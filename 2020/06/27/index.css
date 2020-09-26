@@ -1,17 +1,17 @@
 @import url("https://fonts.googleapis.com/css2?family=Antic+Slab&display=swap");
 
 * {
-  -webkit-user-select: none;
   -khtml-user-select: none;
   -moz-user-select: none;
   -o-user-select: none;
+  -webkit-user-select: none;
   user-select: none;
 }
 
 html,
 body {
-  height: 100%;
   width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -28,8 +28,8 @@ body {
 }
 
 a {
-  color: inherit;
   text-decoration: none;
+  color: inherit;
 }
 
 a:visited {
@@ -41,8 +41,8 @@ a[disabled] {
 }
 
 #content {
-  height: 100%;
   width: 100%;
+  height: 100%;
 }
 
 #content:active > #next-arrow-right {
@@ -50,12 +50,13 @@ a[disabled] {
 }
 
 #next-arrow-right {
+  display: flex;
   position: absolute;
   top: 30%;
   right: 0%;
-  height: 15%;
-  width: 125%;
-  clip-path: polygon(0% 0%, 90% 0, 100% 50%, 90% 100%, 0% 100%);
+  align-items: center;
+  transition: right 2s, transform 2s;
+  opacity: 0.9;
   background: repeating-linear-gradient(
     -45deg,
     #a4fba6,
@@ -65,16 +66,13 @@ a[disabled] {
     #30cb00 20px,
     #30cb00 30px
   );
-  opacity: 0.9;
-  transition: right 2s, transform 2s;
-  will-change: right, transform;
-
-  display: flex;
-  align-items: center;
-
-  font-size: 30vh;
+  width: 125%;
+  height: 15%;
   color: rgba(0, 0, 0, 0.8);
   font-family: "Antic Slab", serif;
+  font-size: 30vh;
+  will-change: right, transform;
+  clip-path: polygon(0% 0%, 90% 0, 100% 50%, 90% 100%, 0% 100%);
 }
 
 #next-arrow-right:active {
@@ -87,12 +85,13 @@ a[disabled] {
 }
 
 #next-arrow-up {
+  display: flex;
   position: absolute;
   top: 100%;
   left: 70%;
-  height: 100%;
-  width: 15vh;
-  clip-path: polygon(50% 0, 100% 10%, 100% 100%, 0 100%, 0 10%);
+  justify-content: center;
+  transition: top 1.5s;
+  opacity: 0.9;
   background: repeating-linear-gradient(
     -45deg,
     #ffbaba,
@@ -102,16 +101,13 @@ a[disabled] {
     #ff5252 20px,
     #ff5252 30px
   );
-  opacity: 0.9;
-  transition: top 1.5s;
-  will-change: top;
-
-  display: flex;
-  justify-content: center;
-
-  font-size: 30vh;
+  width: 15vh;
+  height: 100%;
   color: rgba(0, 0, 0, 0.8);
   font-family: "Antic Slab", serif;
+  font-size: 30vh;
+  will-change: top;
+  clip-path: polygon(50% 0, 100% 10%, 100% 100%, 0 100%, 0 10%);
 }
 
 #next-arrow-up > a {
@@ -124,12 +120,13 @@ a[disabled] {
 }
 
 #prev-arrow-left {
+  display: flex;
   position: absolute;
   top: 50%;
   left: 0%;
-  height: 15%;
-  width: 100%;
-  clip-path: polygon(10% 0, 100% 0%, 100% 100%, 10% 100%, 0% 50%);
+  align-items: center;
+  transition: left 2s;
+  opacity: 0.9;
   background: repeating-linear-gradient(
     45deg,
     #71c7ec,
@@ -139,16 +136,13 @@ a[disabled] {
     #189ad3 20px,
     #189ad3 30px
   );
-  opacity: 0.9;
-  transition: left 2s;
-  will-change: left;
-
-  display: flex;
-  align-items: center;
-
-  font-size: 30vh;
+  width: 100%;
+  height: 15%;
   color: rgba(0, 0, 0, 0.8);
   font-family: "Antic Slab", serif;
+  font-size: 30vh;
+  will-change: left;
+  clip-path: polygon(10% 0, 100% 0%, 100% 100%, 10% 100%, 0% 50%);
 }
 
 #prev-arrow-left:active {
@@ -161,12 +155,13 @@ a[disabled] {
 }
 
 #prev-arrow-down {
+  display: flex;
   position: absolute;
   bottom: 100%;
   left: 20%;
-  height: 100%;
-  width: 15vh;
-  clip-path: polygon(0 90%, 0 0, 100% 0, 100% 90%, 50% 100%);
+  justify-content: center;
+  transition: bottom 1.5s;
+  opacity: 0.9;
   background: repeating-linear-gradient(
     45deg,
     #fff9ae,
@@ -176,16 +171,13 @@ a[disabled] {
     #e9d700 20px,
     #e9d700 30px
   );
-  opacity: 0.9;
-  transition: bottom 1.5s;
-  will-change: bottom;
-
-  display: flex;
-  justify-content: center;
-
-  font-size: 30vh;
+  width: 15vh;
+  height: 100%;
   color: rgba(0, 0, 0, 0.8);
   font-family: "Antic Slab", serif;
+  font-size: 30vh;
+  will-change: bottom;
+  clip-path: polygon(0 90%, 0 0, 100% 0, 100% 90%, 50% 100%);
 }
 
 #prev-arrow-down > a {

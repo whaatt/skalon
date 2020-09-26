@@ -54,6 +54,18 @@ const sleep = (time) =>
   new Promise((resolve) => setTimeout(() => resolve(undefined), time));
 
 /**
+ * Change the UI to free play mode.
+ */
+const setFreePlayMode = () => {
+  currentSongNotes = null;
+  currentSongPosition = 0;
+
+  SONG_PICKER_SELECT.value = SONG_OPTION_FREE_PLAY;
+  ROOT_PICKER_SELECT.disabled = false;
+  SCALE_PICKER_SELECT.disabled = false;
+};
+
+/**
  * Handles key-down events for the accordion.
  */
 const keyDownListener = (event) => {
@@ -131,12 +143,7 @@ const keyDownListener = (event) => {
 
     // When a song is finished, return to free play mode.
     if (currentSongPosition >= currentSongNotes.length) {
-      // This logic also shows up in the song picker code...
-      currentSongNotes = null;
-      currentSongPosition = 0;
-      SONG_PICKER_SELECT.value = SONG_OPTION_FREE_PLAY;
-      ROOT_PICKER_SELECT.disabled = false;
-      SCALE_PICKER_SELECT.disabled = false;
+      setFreePlayMode();
     }
   }
 };
@@ -175,13 +182,18 @@ const keyUpListener = (event) => {
  * Sets up accordion audio.
  */
 const startAudio = async () => {
+  // Set up audio button.
   TOGGLE_AUDIO_BUTTON.blur();
+  TOGGLE_AUDIO_BUTTON.innerHTML = STOP_ACCORDION_AUDIO;
+  TOGGLE_AUDIO_BUTTON.classList.add("running");
+
+  // Set up audio state.
   audioRunning = true;
   if (audioContext.state === "suspended") {
     audioContext.resume();
   }
-  TOGGLE_AUDIO_BUTTON.innerHTML = STOP_ACCORDION_AUDIO;
-  TOGGLE_AUDIO_BUTTON.classList.add("running");
+
+  // Try to start video.
   if (!videoEnableFailed) {
     // Force a redraw of the audio button before starting video.
     await sleep(50);
@@ -193,20 +205,25 @@ const startAudio = async () => {
  * Tears down accordion audio.
  */
 const stopAudio = async () => {
+  // Reset audio button.
   TOGGLE_AUDIO_BUTTON.blur();
+  TOGGLE_AUDIO_BUTTON.innerHTML = START_ACCORDION_AUDIO;
+  TOGGLE_AUDIO_BUTTON.classList.remove("running");
+
+  // Reset audio state.
   audioRunning = false;
   synth.clearNotes();
   keysDownNotes = {};
-  TOGGLE_AUDIO_BUTTON.innerHTML = START_ACCORDION_AUDIO;
-  TOGGLE_AUDIO_BUTTON.classList.remove("running");
   currentSongPosition = 0;
+
+  // Try to stop video.
   if (videoRunning) {
     // Force a redraw of the audio button before stopping video.
     await sleep(50);
     stopVideo();
   } else {
-    // Normally this is handled within `stopVideo`.
-    // RIP spaghetti code...
+    // Normally this is handled within `stopVideo` if video is running (since
+    // the button is disabled as soon as the stop is requested).
     TOGGLE_VIDEO_BUTTON.disabled = true;
   }
 };
@@ -240,10 +257,12 @@ const runCaptureLoop = (width, height) => {
       // Destroy flow calculator to avoid memory leakage.
       flow.destroy();
 
-      // Set new video state.
+      // Reset video button.
       TOGGLE_VIDEO_BUTTON.innerHTML = START_ACCORDION_VIDEO;
       TOGGLE_VIDEO_BUTTON.classList.remove("running");
       TOGGLE_VIDEO_BUTTON.disabled = !audioRunning;
+
+      // Reset video state.
       shouldStopVideo = false;
       videoRunning = false;
       return;
@@ -269,6 +288,7 @@ const runCaptureLoop = (width, height) => {
         "%), linear-gradient(to right, #ca4dbb 0%, #cab74d 50%, #7cca4d 100%)";
     }
 
+    // Ensure that we grab frames no faster than 60 FPS.
     const delay = 1000 / FRAMES_PER_SECOND - (Date.now() - begin);
     setTimeout(processFrame, delay);
   };
@@ -304,7 +324,7 @@ const startVideo = async () => {
       // Run the capture loop.
       runCaptureLoop(width, height);
 
-      // Set new video state.
+      // Set up video button and video state.
       TOGGLE_VIDEO_BUTTON.classList.add("running");
       TOGGLE_VIDEO_BUTTON.innerHTML = STOP_ACCORDION_VIDEO;
       TOGGLE_VIDEO_BUTTON.disabled = false;
@@ -327,8 +347,6 @@ const stopVideo = () => {
   TOGGLE_VIDEO_BUTTON.disabled = true;
   shouldStopVideo = true;
   synth.setVolume(DEFAULT_VOLUME);
-  ARTICULATION_BAR.style.background =
-    "linear-gradient(to right, #ca4dbb 0%, #cab74d 50%, #7cca4d 100%)";
 };
 
 /**
@@ -354,7 +372,7 @@ const selectCustomSongFile = async (event) => {
       return;
     }
 
-    // Parsed file; set file to current song.
+    // Parsed file; set file text to current song.
     CUSTOM_SONG_BUTTON_TEXT.innerHTML =
       SELECT_CUSTOM_MIDI_FILE_LOADED +
       " " +
@@ -372,17 +390,11 @@ const selectCustomSongFile = async (event) => {
 const selectSong = async (event) => {
   SONG_PICKER_SELECT.blur();
   if (event.target.value === SONG_OPTION_FREE_PLAY) {
-    currentSongNotes = null;
-    currentSongPosition = 0;
-    ROOT_PICKER_SELECT.disabled = false;
-    SCALE_PICKER_SELECT.disabled = false;
+    setFreePlayMode();
   } else if (event.target.value === SONG_OPTION_CUSTOM_MIDI) {
     if (customSongNotes === null) {
-      currentSongNotes = null;
-      currentSongPosition = 0;
-      SONG_PICKER_SELECT.value = SONG_OPTION_FREE_PLAY;
-      ROOT_PICKER_SELECT.disabled = false;
-      SCALE_PICKER_SELECT.disabled = false;
+      // No custom MIDI loaded; switch back to free play.
+      setFreePlayMode();
       return;
     }
 
@@ -396,12 +408,18 @@ const selectSong = async (event) => {
     ROOT_PICKER_SELECT.disabled = true;
     SCALE_PICKER_SELECT.disabled = true;
   }
-  SONG_PICKER_SELECT.blur();
 };
 
 /*
  * Main Code
  */
+
+// Style keyboard border colors.
+const keyElements = document.getElementsByClassName("key");
+for (let i = 0; i < keyElements.length; i++) {
+  keyElements[i].style["border-color"] =
+    "hsl(" + ((300 + 6 * i) % 360) + ", 54%, 55%)";
+}
 
 // Set up `AudioContext`.
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -489,13 +507,6 @@ SCALE_PICKER_SELECT.addEventListener("change", (event) => {
 // Set up key listeners.
 document.addEventListener("keydown", keyDownListener);
 document.addEventListener("keyup", keyUpListener);
-
-// Re-style keyboard opacities.
-const keyElements = document.getElementsByClassName("key");
-for (let i = 0; i < keyElements.length; i++) {
-  keyElements[i].style["border-color"] =
-    "hsl(" + ((300 + 6 * i) % 360) + ", 54%, 55%)";
-}
 
 // Set up fake key presses for keyboard (useful on mobile).
 document.querySelectorAll(".key").forEach((keyElement) => {
