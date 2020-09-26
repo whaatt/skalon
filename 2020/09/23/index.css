@@ -18,6 +18,10 @@ body {
   text-transform: lowercase;
 }
 
+#content {
+  width: 300px;
+}
+
 button,
 select {
   text-transform: lowercase;
@@ -111,7 +115,7 @@ select:disabled:hover {
 
 button.toggle,
 .picker {
-  width: 300px;
+  width: 100%;
 }
 
 button.toggle:first-of-type {
@@ -176,7 +180,7 @@ button.toggle.running {
 #articulation-bar {
   display: none;
   height: 10px;
-  width: 300px;
+  width: 100%;
   margin-top: 70px;
   background: linear-gradient(to right, #ca4dbb 0%, #cab74d 50%, #7cca4d 100%);
 }
@@ -195,7 +199,7 @@ button.toggle.running {
 
 .keyboard-row {
   display: flex;
-  width: 300px;
+  width: 100%;
   margin-bottom: 10px;
 }
 
@@ -204,6 +208,7 @@ button.toggle.running {
   display: inline-block;
   padding: 5px;
   border: 1px solid #eee;
+  cursor: pointer;
   text-align: center;
   font-size: 95%;
 }

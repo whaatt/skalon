@@ -496,3 +496,27 @@ for (let i = 0; i < keyElements.length; i++) {
   keyElements[i].style["border-color"] =
     "hsl(" + ((300 + 6 * i) % 360) + ", 54%, 55%)";
 }
+
+// Set up fake key presses for keyboard (useful on mobile).
+document.querySelectorAll(".key").forEach((keyElement) => {
+  const key = keyElement.getAttribute("data-key");
+  keyElement.addEventListener("touchstart", (event) => {
+    event.preventDefault();
+    document.dispatchEvent(new KeyboardEvent("keydown", { key }));
+  });
+  keyElement.addEventListener("mousedown", (event) => {
+    event.preventDefault();
+    document.dispatchEvent(new KeyboardEvent("keydown", { key }));
+  });
+  keyElement.addEventListener("touchend", (event) => {
+    event.preventDefault();
+    document.dispatchEvent(new KeyboardEvent("keyup", { key }));
+  });
+  keyElement.addEventListener("mouseup", (event) => {
+    event.preventDefault();
+    document.dispatchEvent(new KeyboardEvent("keyup", { key }));
+  });
+  keyElement.addEventListener("mouseleave", () =>
+    document.dispatchEvent(new KeyboardEvent("keyup", { key }))
+  );
+});
