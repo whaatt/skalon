@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
 
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <meta name="description" content="the meme lives on" />
+    <meta name="description" content="an open-and-shut case" />
 
     <link
       rel="apple-touch-icon"
@@ -38,7 +38,7 @@
     <meta name="theme-color" content="#ffffff" />
 
     <link rel="stylesheet" href="/css/vendor/normalize.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/picnic" />
+    <link rel="stylesheet" href="/css/vendor/picnic-6.5.3.min.css" />
     <link rel="stylesheet" href="index.css" />
   </head>
   <body>
@@ -77,30 +77,39 @@
           />
         </div>
       </a>
-      <button id="toggle-audio" class="toggle">Start Laptop Accordion</button
-      ><br />
-      <button id="toggle-video" class="toggle" disabled>
-        Start Webcam Dynamics Control</button
-      ><br />
+      <button id="toggle-audio-button" class="toggle">
+        Start Laptop Accordion
+      </button>
+      <button id="toggle-video-button" class="toggle" disabled>
+        Start Screen Motion Tracking
+      </button>
+      <button id="custom-song-button" class="toggle">
+        <span id="custom-song-button-text">Select Custom MIDI for Song</span>
+        <span id="custom-song-button-error-text"></span>
+      </button>
       <div class="picker">
         <span class="picker-label">Song:</span>
-        <select id="song-picker">
-          <option value="">Free Play</option>
+        <select id="song-picker-select">
+          <option value="Free Play">Free Play</option>
         </select>
       </div>
       <div class="picker">
         <span class="picker-label">Root Note:</span>
-        <select id="root-picker">
+        <select id="root-picker-select">
           <option value="C">C</option>
         </select>
       </div>
       <div class="picker">
         <span class="picker-label">Scale:</span>
-        <select id="scale-picker">
+        <select id="scale-picker-select">
           <option>Major</option>
         </select>
       </div>
-      <div class="keyboard">
+      <div id="articulation-bar"></div>
+      <div id="keyboard">
+        <div id="keyboard-help-text">
+          tip: Use left and right arrows to scrub through songs
+        </div>
         <div class="keyboard-row">
           <span class="key" data-key="q">Q</span>
           <span class="key" data-key="w">W</span>
@@ -140,10 +149,11 @@
       </div>
       <div id="prev-next">
         <button id="prev" onclick="window.location.href='/2020/06/27/'">
-          Prev
+          Prev Post
         </button>
-        <button id="next" disabled>Next</button>
+        <button id="next" disabled>Next Post</button>
       </div>
+      <input id="custom-song-dialog" type="file" accept="audio/midi" />
       <div id="published">23 September 2020</div>
     </div>
 
@@ -153,7 +163,8 @@
     ></script>
     <script src="/js/vendor/ga.js"></script>
     <script src="https://docs.opencv.org/3.4.0/opencv.js"></script>
-    <script src="https://surikov.github.io/webaudiofont/npm/dist/WebAudioFontPlayer.js"></script>
+    <script src="https://unpkg.com/@tonejs/midi@2.0.25/build/Midi.js"></script>
+    <script src="/js/vendor/webAudioFontPlayer-2.5.0.js"></script>
     <script src="index.js" type="module"></script>
   </body>
 </html>

@@ -1,31 +1,96 @@
+// TODO: Use a framework to drastically simplify the data flow and reduce the
+// probability of bugs...
+
 import { Flow, FRAMES_PER_SECOND } from "./modules/flow.js";
 import { Mapper } from "./modules/mapper.js";
+import { Song } from "./modules/song.js";
 import { Synth } from "./modules/synth.js";
 
-// Global audio constants:
+// Audio elements:
+const TOGGLE_AUDIO_BUTTON = document.getElementById("toggle-audio-button");
+const CUSTOM_SONG_BUTTON = document.getElementById("custom-song-button");
+const CUSTOM_SONG_BUTTON_TEXT = document.getElementById(
+  "custom-song-button-text"
+);
+const CUSTOM_SONG_BUTTON_ERROR_TEXT = document.getElementById(
+  "custom-song-button-error-text"
+);
+const CUSTOM_SONG_DIALOG = document.getElementById("custom-song-dialog");
+const SONG_PICKER_SELECT = document.getElementById("song-picker-select");
+const ROOT_PICKER_SELECT = document.getElementById("root-picker-select");
+const SCALE_PICKER_SELECT = document.getElementById("scale-picker-select");
+const ARTICULATION_BAR = document.getElementById("articulation-bar");
+
+// Audio constants:
 const DEFAULT_VOLUME = 0.1;
-const TOGGLE_AUDIO_BUTTON = document.getElementById("toggle-audio");
-const SONG_PICKER_SELECT = document.getElementById("song-picker");
-const ROOT_PICKER_SELECT = document.getElementById("root-picker");
-const SCALE_PICKER_SELECT = document.getElementById("scale-picker");
+const ARTICULATION_SCALE_FACTOR = 0.25;
 const START_ACCORDION_AUDIO = "Start Laptop Accordion";
 const STOP_ACCORDION_AUDIO = "Stop Laptop Accordion";
+const SELECT_CUSTOM_MIDI_FILE_ERROR = "[read error]";
+const SELECT_CUSTOM_MIDI_FILE_LOADED = "Loaded MIDI:";
+const SONG_OPTION_FREE_PLAY = "Free Play";
+const SONG_OPTION_CUSTOM_MIDI = "Custom MIDI";
+const SONG_OPTION_CUSTOM_MIDI_ID = "song-option-custom-midi";
 
-// Global audio state:
-let startedOnce = false;
+// General audio state:
+let videoEnableFailed = false;
 let audioRunning = false;
 let synth = null;
-let keysDown = {};
+
+// Maps key values to notes triggered by the given keys. If a key is not present
+// in this map, it is not pressed.
+let keysDownNotes = {};
+
+// Note-related state:
 const mapper = new Mapper();
+let currentSongNotes = null;
+let currentSongPosition = 0;
+let customSongNotes = null;
 
 /**
- * Accordion key-down listener.
+ * Returns a `Promise` that resolves after `time` milliseconds.
+ */
+const sleep = (time) =>
+  new Promise((resolve) => setTimeout(() => resolve(undefined), time));
+
+/**
+ * Handles key-down events for the accordion.
  */
 const keyDownListener = (event) => {
-  if (keysDown[event.key]) {
+  // Ignore keys we don't care about.
+  if (
+    !Mapper.getKeys().has(event.key) &&
+    event.key !== "ArrowLeft" &&
+    event.key !== "ArrowRight"
+  ) {
     return;
   }
-  keysDown[event.key] = true;
+
+  // Debounce repeated presses.
+  if (
+    keysDownNotes[event.key] !== undefined &&
+    event.key !== "ArrowLeft" &&
+    event.key !== "ArrowRight"
+  ) {
+    return;
+  }
+
+  // Allow quick scrubbing with left and right arrow keys by stopping notes when
+  // the key is held for repeated presses.
+  if (
+    (event.key === "ArrowLeft" || event.key === "ArrowRight") &&
+    keysDownNotes[event.key] !== undefined &&
+    synth !== null
+  ) {
+    for (const note of keysDownNotes[event.key]) {
+      synth.stopNote(note);
+    }
+  }
+
+  // Associate this key press to any notes played.
+  keysDownNotes[event.key] = [];
+
+  // Light up visual keyboard.
   const keyElement = document.querySelector(
     '.key[data-key="' + event.key + '"]'
   );
@@ -33,18 +98,60 @@ const keyDownListener = (event) => {
     keyElement.style["background-color"] = keyElement.style["border-color"];
     keyElement.style.color = "transparent";
   }
-  // TODO: Implement song mode.
-  if (synth === null || !audioRunning || !Mapper.getKeys().has(event.key)) {
+
+  // Make sure the synth is running before we try to play notes.
+  if (synth === null || !audioRunning) {
     return;
   }
-  synth.playNote(mapper.getMidiNote(event.key));
+
+  if (currentSongNotes === null) {
+    // Free play mode:
+    if (!Mapper.getKeys().has(event.key)) {
+      return;
+    }
+    const note = mapper.getMidiNote(event.key);
+    keysDownNotes[event.key].push(note);
+    synth.playNote(note);
+  } else {
+    // Song mode:
+    // Turn on all notes at the current song position.
+    for (const note of currentSongNotes[currentSongPosition]) {
+      keysDownNotes[event.key].push(note);
+      synth.playNote(note);
+    }
+
+    // Advance song unless we are scrubbing backwards.
+    if (event.key === "ArrowLeft") {
+      if (currentSongPosition > 0) {
+        currentSongPosition -= 1;
+      }
+    } else {
+      currentSongPosition += 1;
+    }
+
+    // When a song is finished, return to free play mode.
+    if (currentSongPosition >= currentSongNotes.length) {
+      // This logic also shows up in the song picker code...
+      currentSongNotes = null;
+      currentSongPosition = 0;
+      SONG_PICKER_SELECT.value = SONG_OPTION_FREE_PLAY;
+      ROOT_PICKER_SELECT.disabled = false;
+      SCALE_PICKER_SELECT.disabled = false;
+    }
+  }
 };
 
 /**
- * Accordion key-up listener.
+ * Handles key-up events for the accordion.
  */
 const keyUpListener = (event) => {
-  keysDown[event.key] = false;
+  // Remember the notes played for this key and then reset the key state.
+  const notesToRemove = keysDownNotes[event.key] || [];
+  if (keysDownNotes[event.key] !== undefined) {
+    delete keysDownNotes[event.key];
+  }
+
+  // Turn off visual keyboard lighting.
   const keyElement = document.querySelector(
     '.key[data-key="' + event.key + '"]'
   );
@@ -52,41 +159,67 @@ const keyUpListener = (event) => {
     keyElement.style["background-color"] = "transparent";
     keyElement.style.color = "#eee";
   }
-  if (synth === null || !audioRunning || !Mapper.getKeys().has(event.key)) {
+
+  // Make sure the synth is running before we try to stop notes.
+  if (synth === null) {
     return;
   }
-  synth.stopNote(mapper.getMidiNote(event.key));
+
+  // Turn off all notes associated with this key.
+  for (const note of notesToRemove) {
+    synth.stopNote(note);
+  }
 };
 
 /**
  * Sets up accordion audio.
  */
-const startAudio = () => {
+const startAudio = async () => {
+  TOGGLE_AUDIO_BUTTON.blur();
   audioRunning = true;
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
   TOGGLE_AUDIO_BUTTON.innerHTML = STOP_ACCORDION_AUDIO;
-  if (!startedOnce) {
+  TOGGLE_AUDIO_BUTTON.classList.add("running");
+  if (!videoEnableFailed) {
+    // Force a redraw of the audio button before starting video.
+    await sleep(50);
     startVideo();
-    startedOnce = true;
   }
 };
 
 /**
  * Tears down accordion audio.
  */
-const stopAudio = () => {
+const stopAudio = async () => {
+  TOGGLE_AUDIO_BUTTON.blur();
   audioRunning = false;
   synth.clearNotes();
-  keysDown = {};
+  keysDownNotes = {};
   TOGGLE_AUDIO_BUTTON.innerHTML = START_ACCORDION_AUDIO;
+  TOGGLE_AUDIO_BUTTON.classList.remove("running");
+  currentSongPosition = 0;
+  if (videoRunning) {
+    // Force a redraw of the audio button before stopping video.
+    await sleep(50);
+    stopVideo();
+  } else {
+    // Normally this is handled within `stopVideo`.
+    // RIP spaghetti code...
+    TOGGLE_VIDEO_BUTTON.disabled = true;
+  }
 };
 
-// Global video constants.
-const TOGGLE_VIDEO_BUTTON = document.getElementById("toggle-video");
+// Video elements.
+const TOGGLE_VIDEO_BUTTON = document.getElementById("toggle-video-button");
 const VIDEO_INPUT = document.getElementById("video-input");
-const START_ACCORDION_VIDEO = "Start Webcam Dynamics Control";
-const STOP_ACCORDION_VIDEO = "Stop Webcam Dynamics Control";
 
-// Global video state:
+// Video constants.
+const START_ACCORDION_VIDEO = "Start Screen Motion Tracking";
+const STOP_ACCORDION_VIDEO = "Stop Screen Motion Tracking";
+
+// General video state:
 let videoRunning = false;
 let shouldStopVideo = false;
 
@@ -109,7 +242,8 @@ const runCaptureLoop = (width, height) => {
 
       // Set new video state.
       TOGGLE_VIDEO_BUTTON.innerHTML = START_ACCORDION_VIDEO;
-      TOGGLE_VIDEO_BUTTON.disabled = false;
+      TOGGLE_VIDEO_BUTTON.classList.remove("running");
+      TOGGLE_VIDEO_BUTTON.disabled = !audioRunning;
       shouldStopVideo = false;
       videoRunning = false;
       return;
@@ -121,7 +255,18 @@ const runCaptureLoop = (width, height) => {
     // Update and retrieve new articulation value.
     flow.step(frameBuffer, Date.now());
     if (synth !== null) {
-      synth.setVolume(flow.getArticulation());
+      // Set accordion volume based on articulation.
+      const articulation = flow.getArticulation();
+      synth.setVolume(articulation * ARTICULATION_SCALE_FACTOR);
+
+      // Update articulation level bar.
+      const percentage = articulation * 100;
+      ARTICULATION_BAR.style.background =
+        "linear-gradient(to right, transparent 0%, transparent " +
+        percentage +
+        "%, #333 " +
+        percentage +
+        "%), linear-gradient(to right, #ca4dbb 0%, #cab74d 50%, #7cca4d 100%)";
     }
 
     const delay = 1000 / FRAMES_PER_SECOND - (Date.now() - begin);
@@ -134,11 +279,15 @@ const runCaptureLoop = (width, height) => {
 /**
  * Sets up video capture.
  */
-const startVideo = () => {
+const startVideo = async () => {
+  TOGGLE_VIDEO_BUTTON.blur();
   // Disable toggle until success or failure.
   TOGGLE_VIDEO_BUTTON.disabled = true;
+  // Force a redraw so the button is disabled before we attempt to start video.
+  await sleep(50);
 
   // Prompt for webcam input.
+  // These calls to `setTimeout` force the DOM to
   navigator.mediaDevices
     .getUserMedia({ video: true, audio: false })
     .then((stream) => {
@@ -156,6 +305,7 @@ const startVideo = () => {
       runCaptureLoop(width, height);
 
       // Set new video state.
+      TOGGLE_VIDEO_BUTTON.classList.add("running");
       TOGGLE_VIDEO_BUTTON.innerHTML = STOP_ACCORDION_VIDEO;
       TOGGLE_VIDEO_BUTTON.disabled = false;
       videoRunning = true;
@@ -163,6 +313,7 @@ const startVideo = () => {
     .catch((error) => {
       console.log("Not starting video due to error");
       console.error(error);
+      videoEnableFailed = true;
       TOGGLE_VIDEO_BUTTON.disabled = false;
     });
 };
@@ -171,11 +322,86 @@ const startVideo = () => {
  * Tears down video capture.
  */
 const stopVideo = () => {
+  TOGGLE_VIDEO_BUTTON.blur();
   // Disable toggle until completion.
   TOGGLE_VIDEO_BUTTON.disabled = true;
   shouldStopVideo = true;
   synth.setVolume(DEFAULT_VOLUME);
+  ARTICULATION_BAR.style.background =
+    "linear-gradient(to right, #ca4dbb 0%, #cab74d 50%, #7cca4d 100%)";
 };
+
+/**
+ * Handles loading custom songs from disk.
+ */
+const selectCustomSongFile = async (event) => {
+  const files = event.target.files;
+  if (files.length > 0) {
+    const file = files[0];
+    try {
+      customSongNotes = await Song.getNotesForLocalFile(file);
+    } catch (error) {
+      // Could not parse file.
+      console.error(error);
+      // Add the error suffix to the button if it's not already there.
+      if (
+        CUSTOM_SONG_BUTTON_ERROR_TEXT.innerHTML.indexOf(
+          SELECT_CUSTOM_MIDI_FILE_ERROR
+        ) === -1
+      ) {
+        CUSTOM_SONG_BUTTON_ERROR_TEXT.innerHTML += SELECT_CUSTOM_MIDI_FILE_ERROR;
+      }
+      return;
+    }
+
+    // Parsed file; set file to current song.
+    CUSTOM_SONG_BUTTON_TEXT.innerHTML =
+      SELECT_CUSTOM_MIDI_FILE_LOADED +
+      " " +
+      file.name.split(".").slice(0, -1).join(".");
+    CUSTOM_SONG_BUTTON_ERROR_TEXT.innerHTML = "";
+    SONG_PICKER_SELECT.value = SONG_OPTION_CUSTOM_MIDI;
+    currentSongNotes = customSongNotes;
+    currentSongPosition = 0;
+  }
+};
+
+/**
+ * Handles song selection events.
+ */
+const selectSong = async (event) => {
+  SONG_PICKER_SELECT.blur();
+  if (event.target.value === SONG_OPTION_FREE_PLAY) {
+    currentSongNotes = null;
+    currentSongPosition = 0;
+    ROOT_PICKER_SELECT.disabled = false;
+    SCALE_PICKER_SELECT.disabled = false;
+  } else if (event.target.value === SONG_OPTION_CUSTOM_MIDI) {
+    if (customSongNotes === null) {
+      currentSongNotes = null;
+      currentSongPosition = 0;
+      SONG_PICKER_SELECT.value = SONG_OPTION_FREE_PLAY;
+      ROOT_PICKER_SELECT.disabled = false;
+      SCALE_PICKER_SELECT.disabled = false;
+      return;
+    }
+
+    currentSongNotes = customSongNotes;
+    currentSongPosition = 0;
+    ROOT_PICKER_SELECT.disabled = true;
+    SCALE_PICKER_SELECT.disabled = true;
+  } else {
+    currentSongNotes = await Song.getNotesForPreset(event.target.value);
+    currentSongPosition = 0;
+    ROOT_PICKER_SELECT.disabled = true;
+    SCALE_PICKER_SELECT.disabled = true;
+  }
+  SONG_PICKER_SELECT.blur();
+};
+
+/*
+ * Main Code
+ */
 
 // Set up `AudioContext`.
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -195,10 +421,6 @@ fontPlayer.loader.waitLoad(() => {
   synth.setVolume(DEFAULT_VOLUME);
 });
 
-// Set up key listeners.
-document.addEventListener("keydown", keyDownListener);
-document.addEventListener("keyup", keyUpListener);
-
 // Set up listener on audio toggle button.
 TOGGLE_AUDIO_BUTTON.innerHTML = START_ACCORDION_AUDIO;
 TOGGLE_AUDIO_BUTTON.addEventListener(
@@ -215,15 +437,30 @@ TOGGLE_VIDEO_BUTTON.addEventListener(
   false
 );
 
-// Re-style keyboard opacities.
-const keyElements = document.getElementsByClassName("key");
-console.log(keyElements);
-for (let i = 0; i < keyElements.length; i++) {
-  keyElements[i].style["border-color"] =
-    "hsl(" + ((300 + 6 * i) % 360) + ", 54%, 55%)";
-}
+// Set up custom song picker button.
+CUSTOM_SONG_BUTTON.addEventListener("click", () => CUSTOM_SONG_DIALOG.click());
 
-// Set up inputs and input listeners.
+// Set up custom song dialog.
+CUSTOM_SONG_DIALOG.addEventListener("change", selectCustomSongFile);
+
+// Set up song picker.
+SONG_PICKER_SELECT.innerHTML = "";
+const songOptions = [SONG_OPTION_FREE_PLAY, SONG_OPTION_CUSTOM_MIDI].concat(
+  Song.getPresets()
+);
+for (const songOption of songOptions) {
+  const option = document.createElement("option");
+  if (songOption === SONG_OPTION_CUSTOM_MIDI) {
+    option.id = SONG_OPTION_CUSTOM_MIDI_ID;
+  }
+  option.value = songOption;
+  option.innerHTML = songOption;
+  SONG_PICKER_SELECT.appendChild(option);
+}
+document.getElementById(SONG_OPTION_CUSTOM_MIDI_ID).style.display = "none";
+SONG_PICKER_SELECT.addEventListener("change", selectSong);
+
+// Set up root picker.
 ROOT_PICKER_SELECT.innerHTML = "";
 for (const root of Mapper.getRoots()) {
   const option = document.createElement("option");
@@ -231,11 +468,31 @@ for (const root of Mapper.getRoots()) {
   option.innerHTML = root;
   ROOT_PICKER_SELECT.appendChild(option);
 }
+ROOT_PICKER_SELECT.addEventListener("change", (event) => {
+  ROOT_PICKER_SELECT.blur();
+  mapper.setRoot(event.target.value);
+});
 
+// Set up scale picker.
 SCALE_PICKER_SELECT.innerHTML = "";
 for (const scale of Mapper.getScales()) {
   const option = document.createElement("option");
   option.value = scale;
   option.innerHTML = scale;
   SCALE_PICKER_SELECT.appendChild(option);
+}
+SCALE_PICKER_SELECT.addEventListener("change", (event) => {
+  SCALE_PICKER_SELECT.blur();
+  mapper.setScale(event.target.value);
+});
+
+// Set up key listeners.
+document.addEventListener("keydown", keyDownListener);
+document.addEventListener("keyup", keyUpListener);
+
+// Re-style keyboard opacities.
+const keyElements = document.getElementsByClassName("key");
+for (let i = 0; i < keyElements.length; i++) {
+  keyElements[i].style["border-color"] =
+    "hsl(" + ((300 + 6 * i) % 360) + ", 54%, 55%)";
 }
