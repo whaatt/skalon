@@ -46,6 +46,18 @@ let currentSongNotes = null;
 let currentSongPosition = 0;
 let customSongNotes = null;
 
+// Video elements.
+const TOGGLE_VIDEO_BUTTON = document.getElementById("toggle-video-button");
+const VIDEO_INPUT = document.getElementById("video-input");
+
+// Video constants.
+const START_ACCORDION_VIDEO = "Start Screen Motion Tracking";
+const STOP_ACCORDION_VIDEO = "Stop Screen Motion Tracking";
+
+// General video state:
+let videoRunning = false;
+let shouldStopVideo = false;
+
 /**
  * Returns a `Promise` that resolves after `time` milliseconds.
  */
@@ -53,7 +65,7 @@ const sleep = (time) =>
   new Promise((resolve) => setTimeout(() => resolve(undefined), time));
 
 /**
- * Change the UI to free play mode.
+ * Helper to change the UI to free play mode.
  */
 const setFreePlayMode = () => {
   currentSongNotes = null;
@@ -229,18 +241,6 @@ const stopAudio = async () => {
     TOGGLE_VIDEO_BUTTON.disabled = true;
   }
 };
-
-// Video elements.
-const TOGGLE_VIDEO_BUTTON = document.getElementById("toggle-video-button");
-const VIDEO_INPUT = document.getElementById("video-input");
-
-// Video constants.
-const START_ACCORDION_VIDEO = "Start Screen Motion Tracking";
-const STOP_ACCORDION_VIDEO = "Stop Screen Motion Tracking";
-
-// General video state:
-let videoRunning = false;
-let shouldStopVideo = false;
 
 /**
  * Runs the main video capture loop.
