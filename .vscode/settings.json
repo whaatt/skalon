@@ -6,8 +6,7 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "editor.rulers": [80],
-  "html.format.enable": false,
-  "javascript.format.enable": false,
+  "python.pythonPath": "python3",
   "[css]": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode"
