@@ -1,5 +1,4 @@
 DirectoryIndex index.html
-DirectorySlash Off
 RewriteEngine On
 
 # Remove trailing slashes on files.
