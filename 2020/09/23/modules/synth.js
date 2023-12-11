@@ -1,5 +1,6 @@
 const DURATION_FOREVER = 999;
-const GAIN_CHANGE_TIME_CONSTANT = 0.0001;
+// Make volume changes smooth but nearly instant.
+const GAIN_CHANGE_TIME_CONSTANT = 0.01;
 
 /**
  * A basic SoundFont-based polyphonic synthesizer.
@@ -20,7 +21,7 @@ class Synth {
     }
     this.notes[notePitch] = this.fontPlayer.queueWaveTable(
       this.audioContext,
-      this.audioContext.destination,
+      this.channelMaster.input,
       this.instrument,
       0.0, // Start time.
       notePitch, // Pitch.
@@ -45,7 +46,7 @@ class Synth {
   }
 
   /**
-   * Parameter `volume` goes from 0.0 to 1.0.
+   * Parameter `volume` is a non-negative gain value.
    */
   setVolume(volume) {
     this.channelMaster.output.gain.setTargetAtTime(

@@ -17,24 +17,34 @@ const CRITERIA = new cv.TermCriteria(
   0.03
 );
 
+// Articulation parameters.
+const FRAMES_PER_SECOND = 60;
+const HALF_LIFE_SAMPLES_ACCELERATION = FRAMES_PER_SECOND / 10;
+const SIGMOID_SCALING_FACTOR = 0.25;
+
 // Empty matrix constant.
 const NONE = new cv.Mat();
 
 /**
  * A class to manage computation of optical flow and good features to track.
  *
- * Exposes an instantaneous displacement or flow in the X and Y directions.
+ * Exposes interesting values derived from instantaneous displacement vectors.
  */
 class Flow {
   constructor(width, height) {
     this.width = width;
     this.height = height;
-    this.lastFrame = new cv.Mat(height, width, cv.CV_8UC1);
+    this.lastFrame = null;
+    this.lastFrameTime = -1;
     this.framesSeen = 0;
 
     // Computed flow values.
     this.absoluteAverageFlowX = 0;
     this.absoluteAverageFlowY = 0;
+
+    // Derived values (involving a smoothing constant).
+    this.accelerationY = 0;
+    this.articulation = 0;
 
     // Pre-allocated Shi-Tomasi and Lucas-Kanade matrices.
     this.pointsToTrack = new cv.Mat();
@@ -44,49 +54,49 @@ class Flow {
   }
 
   destroy() {
-    this.lastFrame.delete();
+    if (this.lastFrame !== null) {
+      this.lastFrame.delete();
+    }
     this.pointsToTrack.delete();
     this.pointsAfterFlow.delete();
     this.flowStatuses.delete();
     this.flowErrors.delete();
   }
 
-  reset() {
-    // Swap frames and de-allocate the old one.
-    const oldLastFrame = this.lastFrame;
-    this.lastFrame = new cv.Mat(height, width, cv.CV_8UC1);
-    oldLastFrame.delete();
-    this.framesSeen = 0;
-
-    // Reset computed flow values.
-    this.absoluteAverageFlowX = 0;
-    this.absoluteAverageFlowY = 0;
-  }
-
-  step(frame) {
-    if (this.framesSeen % RESET_AFTER_FRAMES === 0) {
+  step(frame, frameTime) {
+    // Update points to track every `RESET_AFTER_FRAMES` frames or immediately
+    // if we have no points to track.
+    if (
+      (this.framesSeen % RESET_AFTER_FRAMES === 0 ||
+        this.pointsToTrack.rows === 0) &&
+      this.lastFrame !== null
+    ) {
       this.updatePointsToTrack();
     }
     const nextFrame = new cv.Mat();
     cv.cvtColor(frame, nextFrame, cv.COLOR_RGB2GRAY);
-    this.updateFlowValues(nextFrame);
+    if (this.pointsToTrack.rows > 0 && this.lastFrame !== null) {
+      this.updateFlowValues(nextFrame, frameTime);
+    }
 
     // Swap frames and de-allocate the old one.
     const oldLastFrame = this.lastFrame;
     this.lastFrame = nextFrame;
-    oldLastFrame.delete();
+    this.lastFrameTime = frameTime;
+    if (oldLastFrame !== null) {
+      oldLastFrame.delete();
+    }
     this.framesSeen += 1;
   }
 
-  getFlowX() {
-    return this.absoluteAverageFlowX;
+  getArticulation() {
+    return this.articulation;
   }
 
-  getFlowY() {
-    return this.absoluteAverageFlowY;
-  }
+  /*
+   * Private Methods
+   */
 
-  // Private:
   updatePointsToTrack() {
     cv.goodFeaturesToTrack(
       this.lastFrame,
@@ -99,7 +109,7 @@ class Flow {
     );
   }
 
-  updateFlowValues(nextFrame) {
+  updateFlowValues(nextFrame, nextFrameTime) {
     cv.calcOpticalFlowPyrLK(
       this.lastFrame,
       nextFrame,
@@ -133,16 +143,45 @@ class Flow {
       totalDifferenceY += Y - lastY;
     }
 
-    // Save absolute value of average deviations.
-    this.absoluteAverageFlowX =
+    // Compute absolute value of average deviations.
+    let nextAbsoluteAverageFlowX =
       validPointsCount > 0 ? Math.abs(totalDifferenceX / validPointsCount) : 0;
-    this.absoluteAverageFlowY =
+    let nextAbsoluteAverageFlowY =
       validPointsCount > 0 ? Math.abs(totalDifferenceY / validPointsCount) : 0;
 
     // Normalize by width and height.
-    this.absoluteAverageFlowX /= this.width;
-    this.absoluteAverageFlowY /= this.height;
+    nextAbsoluteAverageFlowX /= this.width;
+    nextAbsoluteAverageFlowY /= this.height;
+
+    // Compute derived values.
+    this.updateDerivedValues(nextAbsoluteAverageFlowY, nextFrameTime);
+
+    // Save new flow values.
+    this.absoluteAverageFlowX = nextAbsoluteAverageFlowX;
+    this.absoluteAverageFlowY = nextAbsoluteAverageFlowY;
+  }
+
+  updateDerivedValues(nextAbsoluteAverageFlowY, nextFrameTime) {
+    const deltaSeconds = (nextFrameTime - this.lastFrameTime) / 1000;
+
+    // Compute new smoothed acceleration.
+    const accelerationYInstant = Math.abs(
+      (nextAbsoluteAverageFlowY - this.absoluteAverageFlowY) / deltaSeconds
+    );
+    const alphaAcceleration =
+      1 - Math.exp(Math.log(0.5) / HALF_LIFE_SAMPLES_ACCELERATION);
+    const newAccelerationY =
+      alphaAcceleration * accelerationYInstant +
+      (1 - alphaAcceleration) * this.accelerationY;
+    this.accelerationY = newAccelerationY;
+
+    // Compute the new articulation value, which represents the channel volume
+    // of the accordion instrument. We take the unbounded positive acceleration
+    // value and squash to [0, 1] using a modified sigmoid function.
+    const sigmoidSquashed = (1 / (1 + Math.exp(-this.accelerationY))) * 2 - 1;
+    // Scale the sigmoid since a maximum gain of 1.0 is aggro.
+    this.articulation = sigmoidSquashed * SIGMOID_SCALING_FACTOR;
   }
 }
 
-export { Flow };
+export { Flow, FRAMES_PER_SECOND };
