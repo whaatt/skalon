@@ -26,18 +26,17 @@
       format("svg");
 }
 
+* {
+  margin: 0;
+  padding: 0;
+}
+
 html,
 body {
   background-color: rgb(26, 29, 28);
   width: 100vw;
   height: 100vh;
-}
-
-h1,
-p {
-  text-align: center;
-  margin: 0;
-  padding: 0;
+  font-family: "Haas", "Rubik", "IcoFont", sans-serif;
 }
 
 a {
@@ -84,44 +83,106 @@ a:not([disabled]):hover {
 .poster-box {
   box-sizing: border-box;
   background-color: rgb(42, 50, 95);
-  padding-top: 2%;
-  padding-right: calc(2% * 8.5 / 11);
-  padding-bottom: 2%;
-  padding-left: calc(2% * 8.5 / 11);
+  padding-top: 4%;
+  padding-right: calc(4% * 8.5 / 11);
+  padding-bottom: 4%;
+  padding-left: calc(4% * 8.5 / 11);
   width: 100%;
+  max-width: 100%;
   height: 100%;
-  color: rgb(242, 234, 88);
-  font-family: "Haas", "Rubik", sans-serif;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 /* Poster box area without padding. */
 .poster-box-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  position: relative;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: rgb(255, 255, 254);
+  font-size: 100%;
 }
 
-.poster-icon {
-  color: white;
-  font-family: "IcoFont", sans-serif;
+/**
+ * Content box settings.
+ */
+
+.content-box {
+  box-sizing: border-box;
+  display: inline-block;
+  position: absolute;
+  flex-basis: auto;
+  flex-grow: 1;
+  min-width: 1em;
+  max-width: 100%;
+  height: fit-content;
+  word-wrap: break-word;
+  touch-action: none;
 }
+
+.content-box:empty::before {
+  display: block;
+  width: 100%;
+  text-align: center;
+  content: "...";
+}
+
+.content-box:focus {
+  outline: none;
+}
+
+.content-box:hover {
+  outline: rgb(207, 207, 253) solid 1px !important;
+  outline-offset: 5px !important;
+}
+
+.content-box:active {
+  outline: rgb(207, 207, 253) dotted 1px !important;
+  outline-offset: 5px !important;
+}
+
+.content-box.ck-editor__editable {
+  outline: rgb(207, 207, 253) dotted 1px !important;
+  outline-offset: 5px !important;
+  overflow: visible !important;
+}
+
+.ck-editor__editable,
+.ck-editor__editable * {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.ck-blurred,
+.ck-focused,
+.ck-balloon-panel {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.ck.ck-toolbar-container {
+  margin-top: -7px !important;
+  margin-left: -5px !important;
+}
+
+.ck.ck-toolbar {
+  min-width: 200px;
+}
+
+/**
+ * Seal styles.
+ */
 
 .seal {
-  position: relative;
   display: flex;
+  position: relative;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-family: "IcoFont", sans-serif;
   border: 1px solid white;
   border-radius: 50%;
+  color: white;
+  font-family: "IcoFont", sans-serif;
 }
 
 .seal-text {
@@ -135,15 +196,18 @@ a:not([disabled]):hover {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  transform: translate(-50%, -50%);
   border: 1px solid white;
   border-radius: 50%;
   color: white;
-  font-family: "IcoFont", sans-serif;
 }
+
+/**
+ * Footer styles.
+ */
 
 #footer {
   display: flex;
@@ -153,7 +217,6 @@ a:not([disabled]):hover {
   width: 100%;
   height: 10vh;
   line-height: 1.25;
-  font-family: "Haas", "Rubik", sans-serif;
   font-size: 1.25vh;
 }
 
@@ -179,7 +242,7 @@ a:not([disabled]):hover {
 }
 
 .slash-spacer {
-  margin-left: 0.5em;
   margin-right: 0.5em;
+  margin-left: 0.5em;
   color: white;
 }

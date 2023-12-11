@@ -1,3 +1,5 @@
+import interact from "https://cdn.interactjs.io/v1.10.11/interactjs/index.js";
+
 const { jsPDF } = jspdf;
 
 const ASPECT_RATIO = 8.5 / 11;
@@ -6,28 +8,45 @@ const PPI = 450;
 const CONTENT_INNER = "content-inner";
 const POSTER_BOX_SIZING_WRAPPER = "poster-box-sizing-wrapper";
 const POSTER_BOX = "poster-box";
-const POSTER_ICON = "poster-icon";
+const POSTER_BOX_INNER = "poster-box-inner";
+const CONTENT_BOX = "content-box";
+
 const SEAL = "seal";
 const SEAL_TEXT = "seal-text";
 const SEAL_INNER = "seal-inner";
 
+const EXPORT_JPEG = "export-jpeg";
+const EXPORT_PDF = "export-pdf";
+
+const CK_BODY_WRAPPER = "ck-body-wrapper";
+
+// Pixels to string converter.
 const pixels = (value) => value.toString() + "px";
+
+// Element ID helper (since elements cannot be hashed directly).
+let globalId = 0;
+const getHashableElementId = (element) => {
+  if (element.id) {
+    return element.id;
+  }
+
+  element.id = "content-box-" + (++globalId).toString();
+  return element.id;
+};
+
+/*
+ * Poster Box Setup
+ */
 
 /**
  * Reconciles the contents of a poster box sizing wrapper to match the wrapper
  * size.
  */
 const reconcilePosterBoxContents = (posterBoxSizingWrapper) => {
-  for (const element of posterBoxSizingWrapper.getElementsByTagName("h1")) {
-    element.style.fontSize = pixels(posterBoxSizingWrapper.clientHeight / 10);
-  }
-
-  Array.from(
-    posterBoxSizingWrapper.getElementsByClassName(POSTER_ICON)
-  ).forEach(
+  Array.from(posterBoxSizingWrapper.getElementsByClassName(POSTER_BOX)).forEach(
     (element) =>
       (element.style.fontSize = pixels(
-        posterBoxSizingWrapper.clientHeight / 2.5
+        (posterBoxSizingWrapper.clientHeight / 100) * 6
       ))
   );
 
@@ -64,7 +83,7 @@ const reconcilePosterBoxContents = (posterBoxSizingWrapper) => {
 };
 
 /**
- * Resizes the main poster box sizing wrapper.
+ * Resizes the main poster box sizing wrapper and its constituents.
  */
 const resizePosterBox = () => {
   const contentInner = document.getElementById(CONTENT_INNER);
@@ -72,6 +91,7 @@ const resizePosterBox = () => {
     POSTER_BOX_SIZING_WRAPPER
   )[0];
 
+  // Resize the poster box.
   const useHeightBasis =
     contentInner.clientHeight * ASPECT_RATIO <= contentInner.clientWidth;
   if (useHeightBasis) {
@@ -86,6 +106,7 @@ const resizePosterBox = () => {
     });
   }
 
+  // Resize any special contents.
   reconcilePosterBoxContents(posterBoxSizingWrapper);
 };
 
@@ -151,14 +172,197 @@ const savePoster = async (toPDF) => {
   });
 };
 
-// Export PDF button listener:
-document.getElementById("export-pdf").addEventListener("click", (event) => {
+// Setup the Export PDF button listener:
+document.getElementById(EXPORT_PDF).addEventListener("click", (event) => {
   event.target.setAttribute("disabled", "true");
   savePoster(true).then(() => event.target.removeAttribute("disabled"));
 });
 
-// Export JPEG button listener:
-document.getElementById("export-jpeg").addEventListener("click", (event) => {
+// Setup the Export JPEG button listener:
+document.getElementById(EXPORT_JPEG).addEventListener("click", (event) => {
   event.target.setAttribute("disabled", "true");
   savePoster(false).then(() => event.target.removeAttribute("disabled"));
+});
+
+/*
+ * Content Box Setup
+ */
+
+const resizeXListener = (event) => {
+  const target = event.target;
+  const posterBoxInner = target.closest("." + POSTER_BOX_INNER);
+  target.style.width =
+    (event.rect.width / posterBoxInner.clientWidth) * 100 + "%";
+};
+
+const dragMoveListener = (event) => {
+  const target = event.target;
+  const posterBoxInner = target.closest("." + POSTER_BOX_INNER);
+  const x =
+    (parseFloat(target.getAttribute("data-x")) || 0) +
+    event.dx / posterBoxInner.clientWidth;
+  const y =
+    (parseFloat(target.getAttribute("data-y")) || 0) +
+    event.dy / posterBoxInner.clientHeight;
+
+  target.style.left = x * 100 + "%";
+  target.style.top = y * 100 + "%";
+  target.setAttribute("data-x", x);
+  target.setAttribute("data-y", y);
+};
+
+const editorMap = {};
+
+function SpecialCharactersIcons(editor) {
+  editor.plugins.get("SpecialCharacters").addItems("Arrows", [
+    { title: "simple arrow left", character: "←" },
+    { title: "simple arrow up", character: "↑" },
+    { title: "simple arrow right", character: "\ueea1" },
+    { title: "simple arrow down", character: "↓" },
+  ]);
+}
+
+// Inline editor mode helper:
+const useEditorMode = async (target) => {
+  if (editorMap[getHashableElementId(target)]) {
+    return;
+  }
+  interact(target).unset();
+  editorMap[getHashableElementId(target)] = await InlineEditor.create(target, {
+    extraPlugins: ["Alignment", "FontColor", "FontSize", "SpecialCharacters"],
+    alignment: {
+      options: ["left", "center", "right"],
+    },
+    fontColor: {
+      colors: [
+        {
+          color: "rgb(242, 234, 88)",
+          label: "Yellow",
+        },
+        {
+          color: "rgb(255, 255, 254)",
+          label: "White",
+        },
+        {
+          color: "rgb(59, 107, 72)",
+          label: "Green",
+        },
+      ],
+    },
+    toolbar: [
+      "fontSize",
+      "fontColor",
+      "|",
+      "alignment",
+      "|",
+      "specialCharacters",
+    ],
+  });
+  document.querySelector(".ck.ck-toolbar-container").style.visibility =
+    "hidden";
+  setTimeout(
+    () =>
+      (document.querySelector(".ck.ck-toolbar-container").style.visibility =
+        "initial"),
+    100
+  );
+};
+
+// Interactivity mode helper:
+const useInteractivityMode = async (target) => {
+  if (editorMap[getHashableElementId(target)]) {
+    await editorMap[getHashableElementId(target)].destroy();
+    delete editorMap[getHashableElementId(target)];
+  }
+  interact(target)
+    .resizable({
+      edges: { right: true },
+      listeners: {
+        move: resizeXListener,
+      },
+      modifiers: [
+        interact.modifiers.restrictRect({
+          restriction: "parent",
+        }),
+        interact.modifiers.restrictEdges({
+          outer: "parent",
+        }),
+      ],
+      inertia: false,
+    })
+    .draggable({
+      listeners: { move: dragMoveListener },
+      modifiers: [
+        interact.modifiers.restrictRect({
+          restriction: "parent",
+        }),
+        interact.modifiers.restrictEdges({
+          outer: "parent",
+        }),
+      ],
+      inertia: false,
+    })
+    .reflow({ name: "drag", axis: "xy" });
+};
+
+// Destroy element helper:
+const destroyContentBox = async (target) => {
+  interact(target).unset();
+  if (editorMap[getHashableElementId(target)]) {
+    await editorMap[getHashableElementId(target)].destroy();
+    delete editorMap[getHashableElementId(target)];
+  }
+  target.remove();
+};
+
+// Install content box helper:
+const installContentBox = (element) => {
+  useInteractivityMode(element);
+
+  // Handle Shift + Click to delete.
+  element.addEventListener("click", (event) => {
+    if (event.shiftKey) {
+      destroyContentBox(element);
+    }
+  });
+
+  // Handle double-click to edit text.
+  element.addEventListener("dblclick", () => {
+    setTimeout(() => {
+      element.focus();
+    }, 0);
+    useEditorMode(element);
+  });
+};
+
+// Setup the listeners to switch between editor and interactivity modes.
+Array.from(document.getElementsByClassName(CONTENT_BOX)).forEach(
+  installContentBox
+);
+
+// Handle click-out to exit text editor.
+document.addEventListener("mousedown", (event) => {
+  Array.from(document.getElementsByClassName(CONTENT_BOX)).forEach(
+    (element) => {
+      const ckBodyWrapper = document.getElementsByClassName(CK_BODY_WRAPPER);
+      const clickedElement =
+        event.target == element || element.contains(event.target);
+      const toolbarClicked =
+        ckBodyWrapper.length != 0 && ckBodyWrapper[0].contains(event.target);
+      if (!clickedElement && !toolbarClicked) {
+        useInteractivityMode(element);
+      }
+    }
+  );
+});
+
+// Handle double-click to create element.
+document.addEventListener("dblclick", (event) => {
+  const posterBoxInner = document.getElementsByClassName(POSTER_BOX_INNER)[0];
+  if (posterBoxInner == event.target) {
+    const newContentBox = document.createElement("div");
+    newContentBox.classList.add(CONTENT_BOX);
+    posterBoxInner.appendChild(newContentBox);
+    installContentBox(newContentBox);
+  }
 });
