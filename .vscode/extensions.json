@@ -1,3 +1,7 @@
 {
-  "recommendations": ["esbenp.prettier-vscode", "foxundermoon.shell-format"]
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "foxundermoon.shell-format",
+    "mingteo.sort-selection-concentrically"
+  ]
 }
