@@ -1,17 +1,20 @@
 @font-face {
   src: url("fonts/Sk-Modernist Regular.otf") format("opentype");
   font-family: "Modernist";
+  font-display: swap;
 }
 
 @font-face {
   font-weight: bold;
   src: url("fonts/Sk-Modernist Bold.otf") format("opentype");
   font-family: "Modernist";
+  font-display: swap;
 }
 
 @font-face {
   src: url("fonts/Sk-Modernist Mono.otf") format("opentype");
   font-family: "Modernist Mono";
+  font-display: swap;
 }
 
 html,
