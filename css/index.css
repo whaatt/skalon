@@ -2,6 +2,7 @@
   src: url("fonts/Sk-Modernist Regular.otf") format("opentype");
   font-family: "Modernist";
 }
+
 @font-face {
   font-weight: bold;
   src: url("fonts/Sk-Modernist Bold.otf") format("opentype");
