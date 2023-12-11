@@ -1,3 +1,3 @@
 # skalon
 
-Bruh.
+🥴.
