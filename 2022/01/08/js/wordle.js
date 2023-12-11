@@ -14480,7 +14480,7 @@ const ROW_COUNT = 10;
         .concat(1e3, ";\n  }\n  #system-toaster {\n    z-index: ")
         .concat(
           4e3,
-          `;\n  }\n\n  #game {\n    width: 100%;\n    max-width: var(--game-max-width);\n    margin: 0 auto;\n    height: 100%;\n    display: flex;\n    flex-direction: column;\n  }\n  header {\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    height: var(--header-height);\n    color: var(--color-tone-1);\n    border-bottom: 1px solid var(--color-tone-4);\n  }\n  header .title {\n    font-weight: 700;\n    font-size: 36px;\n    letter-spacing: 0.2rem;\n    text-transform: uppercase;\n    text-align: center;\n  }\n\n  #board-container {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    flex-grow: 1;\n    overflow: hidden;\n  }\n  #board {\n    display: grid;\n    grid-template-rows: repeat(${ROW_COUNT}, 1fr);\n    grid-gap: 5px;\n    padding:10px;\n    box-sizing: border-box;\n  }\n  button.icon {\n    background: none;\n    border: none;\n    cursor: pointer;\n  }\n  #debug-tools {\n    position: absolute;\n    bottom: 0;\n  }\n\n  </style>\n  <game-theme-manager>\n    <div id="game">\n      <header><div class="menu"><a href="/2021/07/01" style="color: rgb(32, 147, 204); text-decoration: none;">Prev</a></div><div class="menu"></div><div class="menu" style="color: #aaa;">Next</div></header><header>\n        <div class="menu">\n          <button id="help" class="icon">\n            <game-icon icon="help"></game-icon>\n          </button>\n        </div>\n        <div class="title">\n         <i><span style="color: red;">evil</span></i> WORDLE\n        </div>\n        <div class="menu">\n          <button id="settings" class="icon">\n            <game-icon icon="settings"></game-icon>\n          </button>\n        </div>\n      </header>\n        <div id="board-container">\n          <div id="board"></div>\n        </div>\n        <game-keyboard></game-keyboard>\n        <game-modal></game-modal>\n        <game-page></game-page>\n        <div class="toaster" id="game-toaster"></div>\n        <div class="toaster" id="system-toaster"></div>\n    </div>\n  </game-theme-manager>\n  <div id="debug-tools"></div>\n`
+          `;\n  }\n\n  #game {\n    width: 100%;\n    max-width: var(--game-max-width);\n    margin: 0 auto;\n    height: 100%;\n    display: flex;\n    flex-direction: column;\n  }\n  header {\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    height: var(--header-height);\n    color: var(--color-tone-1);\n    border-bottom: 1px solid var(--color-tone-4);\n  }\n  header .title {\n    font-weight: 700;\n    font-size: 36px;\n    letter-spacing: 0.2rem;\n    text-transform: uppercase;\n    text-align: center;\n  }\n\n  #board-container {\n    display: flex;\n    justify-content: center;\n    flex-grow: 1; margin: 20px; overflow: auto;\n  }\n  #board {\n    display: grid;\n    grid-template-rows: repeat(${ROW_COUNT}, 1fr);\n    grid-gap: 5px;\n    padding:10px;\n    box-sizing: border-box;\n  }\n  button.icon {\n    background: none;\n    border: none;\n    cursor: pointer;\n  }\n  #debug-tools {\n    position: absolute;\n    bottom: 0;\n  }\n\n  </style>\n  <game-theme-manager>\n    <div id="game">\n      <header><div class="menu" style="margin: 15px;"><a href="/2021/07/01" style="color: rgb(32, 147, 204); text-decoration: none;">Prev</a></div><div class="menu"></div><div class="menu" style="color: #aaa; margin: 15px;">Next</div></header><header>\n        <div class="menu">\n          <button id="help" class="icon">\n            <game-icon icon="help"></game-icon>\n          </button>\n        </div>\n        <div class="title">\n         <i><span style="color: red;">evil</span></i> WORDLE\n        </div>\n        <div class="menu">\n          <button id="settings" class="icon">\n            <game-icon icon="settings"></game-icon>\n          </button>\n        </div>\n      </header>\n        <div id="board-container">\n          <div id="board"></div>\n        </div>\n        <game-keyboard></game-keyboard>\n        <game-modal></game-modal>\n        <game-page></game-page>\n        <div class="toaster" id="game-toaster"></div>\n        <div class="toaster" id="system-toaster"></div>\n    </div>\n  </game-theme-manager>\n  <div id="debug-tools"></div>\n`
         );
     var Qa = document.createElement("template");
     Qa.innerHTML =
@@ -14571,6 +14571,7 @@ const ROW_COUNT = 10;
                   var e,
                     a = this.$board.querySelectorAll("game-row")[this.rowIndex],
                     s = this.boardState[this.rowIndex];
+                  a.scrollIntoView(false);
                   if (((e = s), !Ca.includes(e) && !Ta.includes(e)))
                     return (
                       a.setAttribute("invalid", ""),
@@ -14727,6 +14728,9 @@ const ROW_COUNT = 10;
                         this.boardState[this.rowIndex]
                       ),
                     (this.tileIndex += 1)));
+                this.$board
+                  .querySelectorAll("game-row")
+                  [this.rowIndex].scrollIntoView(false);
               },
             },
             {
@@ -14747,6 +14751,9 @@ const ROW_COUNT = 10;
                     : e.removeAttribute("letters"),
                     e.removeAttribute("invalid"),
                     (this.tileIndex -= 1);
+                  this.$board
+                    .querySelectorAll("game-row")
+                    [this.rowIndex].scrollIntoView(false);
                 }
               },
             },
@@ -14786,10 +14793,7 @@ const ROW_COUNT = 10;
               key: "sizeBoard",
               value: function () {
                 var e = this.shadowRoot.querySelector("#board-container"),
-                  a = Math.min(
-                    Math.floor(e.clientHeight * (5 / ROW_COUNT)),
-                    350
-                  ),
+                  a = 350,
                   s = ROW_COUNT * Math.floor(a / 5);
                 (this.$board.style.width = "".concat(a, "px")),
                   (this.$board.style.height = "".concat(s, "px"));
@@ -15388,7 +15392,7 @@ const ROW_COUNT = 10;
     })(c(HTMLElement));
     customElements.define("game-switch", fs);
     var ks = document.createElement("template");
-    ks.innerHTML = `\n  <style>\n  .instructions {\n    font-size: 14px;\n    color: var(--color-tone-1)\n  }\n\n  .examples {\n    border-bottom: 1px solid var(--color-tone-4);\n    border-top: 1px solid var(--color-tone-4);\n  }\n\n  .example {\n    margin-top: 24px;\n    margin-bottom: 24px;\n  }\n\n  game-tile {\n    width: 40px;\n    height: 40px;\n  }\n\n  :host([page]) section {\n    padding: 16px;\n    padding-top: 0px;\n  }\n\n  </style>\n  <section>\n    <div class="instructions">\n      <p>Guess the <i><b><span style="color: red;">EVIL</span></b></i> <strong>WORDLE</strong> in ${ROW_COUNT} tries.</p>\n      <p>After each guess, the color of the tiles will change to show how close your guess was to the word.</p>\n      <div class="examples">\n        <div class="example">\n          <div class="row">\n            <game-tile letter="w" evaluation="correct" reveal></game-tile>\n            <game-tile letter="e"></game-tile>\n            <game-tile letter="a"></game-tile>\n            <game-tile letter="r"></game-tile>\n            <game-tile letter="y"></game-tile>\n          </div>\n          <p>The letter <strong>W</strong> is in the word and in the correct spot.</p>\n        </div>\n        <div class="example">\n          <div class="row">\n            <game-tile letter="p"></game-tile>\n            <game-tile letter="i"></game-tile>\n            <game-tile letter="l" evaluation="present" reveal></game-tile>\n            <game-tile letter="o"></game-tile>\n            <game-tile letter="t"></game-tile>\n          </div>\n          <p>The letter <strong>L</strong> is in the word but in the wrong spot.</p>\n        </div>\n        <div class="example">\n          <div class="row">\n            <game-tile letter="v"></game-tile>\n            <game-tile letter="a"></game-tile>\n            <game-tile letter="g"></game-tile>\n            <game-tile letter="u" evaluation="absent" reveal></game-tile>\n            <game-tile letter="e"></game-tile>\n          </div>\n          <p>The letter <strong>U</strong> is not in the word in any spot.</p>\n        </div>\n      </div>\n      <p><strong>A new <i><b><span style="color: red;">EVIL</span></b></i> WORDLE will be available each day!<strong></p>\n    </div>\n  </section>\n`;
+    ks.innerHTML = `\n  <style>\n  .instructions {\n    font-size: 14px;\n    color: var(--color-tone-1)\n  }\n\n  .examples {\n    border-bottom: 1px solid var(--color-tone-4);\n    border-top: 1px solid var(--color-tone-4);\n  }\n\n  .example {\n    margin-top: 24px;\n    margin-bottom: 24px;\n  }\n\n  game-tile {\n    width: 40px;\n    height: 40px;\n  }\n\n  :host([page]) section {\n    padding: 16px;\n    padding-top: 0px;\n  }\n\n  </style>\n  <section>\n    <div class="instructions">\n      <p>Guess the <i><b><span style="color: red;">EVIL</span></b></i> <strong>WORDLE</strong> in ${ROW_COUNT} tries.</p>\n      <p>After each guess, the color of the tiles will change to show how close your guess was to the word.</p>\n      <div class="examples">\n        <div class="example">\n          <div class="row">\n            <game-tile letter="w" evaluation="correct" reveal></game-tile>\n            <game-tile letter="e"></game-tile>\n            <game-tile letter="a"></game-tile>\n            <game-tile letter="r"></game-tile>\n            <game-tile letter="y"></game-tile>\n          </div>\n          <p>The letter <strong>W</strong> is in the word and in the correct spot.</p>\n        </div>\n        <div class="example">\n          <div class="row">\n            <game-tile letter="p"></game-tile>\n            <game-tile letter="i"></game-tile>\n            <game-tile letter="l" evaluation="present" reveal></game-tile>\n            <game-tile letter="o"></game-tile>\n            <game-tile letter="t"></game-tile>\n          </div>\n          <p>The letter <strong>L</strong> is in the word but in the wrong spot.</p>\n        </div>\n        <div class="example">\n          <div class="row">\n            <game-tile letter="v"></game-tile>\n            <game-tile letter="a"></game-tile>\n            <game-tile letter="g"></game-tile>\n            <game-tile letter="u" evaluation="absent" reveal></game-tile>\n            <game-tile letter="e"></game-tile>\n          </div>\n          <p>The letter <strong>U</strong> is not in the word in any spot.</p>\n        </div>\n      </div>\n      <p><strong>A new <i><b><span style="color: red;">EVIL</span></b></i> WORDLE will be available each time you refresh the page!</strong></p>\n    </div>\n  </section>\n`;
     var vs = (function (e) {
       n(t, e);
       var a = h(t);
