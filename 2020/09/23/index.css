@@ -271,7 +271,10 @@ button.toggle.running {
 
 #prev-next > button:active,
 #prev-next > button:focus,
-#prev-next > button:hover {
+#prev-next > button:hover,
+#prev-next > button:last-child:active,
+#prev-next > button:last-child:focus,
+#prev-next > button:last-child:hover {
   border: 1px solid #eee;
   box-shadow: none;
   background: transparent;
