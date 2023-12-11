@@ -29,6 +29,7 @@
 * {
   margin: 0;
   padding: 0;
+  line-height: normal;
 }
 
 html,
@@ -91,7 +92,7 @@ a:not([disabled]):hover {
   max-width: 100%;
   height: 100%;
   max-height: 100%;
-  overflow: hidden;
+  color: rgb(255, 255, 254);
 }
 
 /* Poster box area without padding. */
@@ -99,8 +100,9 @@ a:not([disabled]):hover {
   position: relative;
   width: 100%;
   height: 100%;
-  color: rgb(255, 255, 254);
+  /* 100% of the font-size set dynamically on .poster-box. */
   font-size: 100%;
+  overflow: hidden;
 }
 
 /**
@@ -111,13 +113,17 @@ a:not([disabled]):hover {
   box-sizing: border-box;
   display: inline-block;
   position: absolute;
-  flex-basis: auto;
-  flex-grow: 1;
   min-width: 1em;
   max-width: 100%;
-  height: fit-content;
+  word-break: break-all;
   word-wrap: break-word;
+  -khtml-user-select: none;
+  -moz-user-select: -moz-none;
+  -o-user-select: none;
+  -webkit-user-select: none;
+  overflow-wrap: break-word;
   touch-action: none;
+  user-select: none;
 }
 
 .content-box:empty::before {
@@ -132,25 +138,45 @@ a:not([disabled]):hover {
 }
 
 .content-box:hover {
-  outline: rgb(207, 207, 253) solid 1px !important;
+  outline: rgb(176, 176, 252) solid 1px !important;
   outline-offset: 5px !important;
 }
 
 .content-box:active {
-  outline: rgb(207, 207, 253) dotted 1px !important;
+  outline: rgb(176, 176, 252) dotted 1px !important;
   outline-offset: 5px !important;
 }
 
+.content-box.content-box-seal:not(.ck-editor__editable) {
+  width: 15%;
+  min-width: 10%;
+  height: calc(15% * 8.5 / 11);
+  min-height: calc(10% * 8.5 / 11);
+}
+
+.content-box.content-box-seal.ck-editor__editable {
+  width: 25%;
+}
+
 .content-box.ck-editor__editable {
-  outline: rgb(207, 207, 253) dotted 1px !important;
+  outline: rgb(176, 176, 252) dotted 1px !important;
   outline-offset: 5px !important;
   overflow: visible !important;
+  -khtml-user-select: inherit;
+  -moz-user-select: -moz-inherit;
+  -o-user-select: inherit;
+  -webkit-user-select: inherit;
+  user-select: inherit;
 }
 
 .ck-editor__editable,
 .ck-editor__editable * {
   margin: 0 !important;
   padding: 0 !important;
+}
+
+.ck-button__label {
+  line-height: normal !important;
 }
 
 .ck-blurred,
@@ -162,11 +188,15 @@ a:not([disabled]):hover {
 
 .ck.ck-toolbar-container {
   margin-top: -7px !important;
-  margin-left: -5px !important;
+  margin-left: -6px !important;
 }
 
 .ck.ck-toolbar {
   min-width: 200px;
+}
+
+.ck.ck-character-grid .ck-button__label {
+  font-family: "IcoFont", sans-serif !important;
 }
 
 /**
@@ -216,7 +246,7 @@ a:not([disabled]):hover {
   justify-content: center;
   width: 100%;
   height: 10vh;
-  line-height: 1.25;
+  color: #999;
   font-size: 1.25vh;
 }
 
@@ -233,10 +263,6 @@ a:not([disabled]):hover {
   color: rgb(108, 168, 199);
 }
 
-#footer button:disabled {
-  color: #999;
-}
-
 .slash-spacer::before {
   content: "//";
 }
@@ -244,5 +270,5 @@ a:not([disabled]):hover {
 .slash-spacer {
   margin-right: 0.5em;
   margin-left: 0.5em;
-  color: white;
+  color: #eee;
 }
