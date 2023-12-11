@@ -4,8 +4,9 @@
     "source.fixAll": true,
     "source.organizeImports": true
   },
-  "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.rulers": [80],
   "html.format.enable": false,
   "javascript.format.enable": false,
   "[css]": {
@@ -19,6 +20,10 @@
   "[javascript]": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[shellscript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "foxundermoon.shell-format"
   },
   "[xml]": {
     "editor.formatOnSave": true,
