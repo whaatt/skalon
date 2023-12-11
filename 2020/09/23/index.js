@@ -226,6 +226,9 @@ const stopAudio = async () => {
 
   // Reset audio state.
   audioRunning = false;
+  if (audioContext.state === "running") {
+    audioContext.suspend();
+  }
   synth.clearNotes();
   keysDownNotes = {};
   currentSongPosition = 0;
