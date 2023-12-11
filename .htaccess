@@ -13,11 +13,11 @@ RewriteRule ^index\.html$ / [L,NC,NE,R=301]
 RewriteRule ^(.*)/index\.html$ /$1/ [L,NC,NE,R=301]
 
 # Redirect nonexistent root directory files to the directory of the latest post.
-RewriteRule ^/*$ /2020/06/27/ [L,NC,NE,R=307]
+RewriteRule ^/*$ /2020/09/23/ [L,NC,NE,R=307]
 RewriteCond %{REQUEST_URI} !^/.*/.*$
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(.*)$ /2020/06/27/$1 [L,NC,NE,R=307]
+RewriteRule ^(.*)$ /2020/09/23/$1 [L,NC,NE,R=307]
 
 # Canonicalize valid directory URLs to have at least one trailing slash.
 RewriteCond %{REQUEST_FILENAME} -d
