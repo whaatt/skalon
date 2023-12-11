@@ -32,7 +32,7 @@ const SONG_OPTION_CUSTOM_MIDI = "Custom MIDI";
 const SONG_OPTION_CUSTOM_MIDI_ID = "song-option-custom-midi";
 
 // General audio state:
-let videoEnableFailed = false;
+let audioManagingVideo = true;
 let audioRunning = false;
 let synth = null;
 
@@ -193,10 +193,13 @@ const startAudio = async () => {
   }
 
   // Try to start video.
-  if (!videoEnableFailed) {
+  if (audioManagingVideo) {
     // Force a redraw of the audio button before starting video.
     await sleep(50);
     startVideo();
+  } else {
+    // Normally this is handled within `startVideo` (in the managed setting).
+    TOGGLE_VIDEO_BUTTON.disabled = false;
   }
 };
 
@@ -216,10 +219,10 @@ const stopAudio = async () => {
   currentSongPosition = 0;
 
   // Try to stop video.
-  if (videoRunning) {
+  if (audioManagingVideo && videoRunning) {
     // Force a redraw of the audio button before stopping video.
     await sleep(50);
-    stopVideo();
+    stopVideo(true);
   } else {
     // Normally this is handled within `stopVideo` if video is running (since
     // the button is disabled as soon as the stop is requested).
@@ -314,27 +317,37 @@ const startVideo = async () => {
       // Run the capture loop.
       runCaptureLoop(width, height);
 
-      // Set up video button and video state.
+      // Set up video button.
       TOGGLE_VIDEO_BUTTON.classList.add("running");
       TOGGLE_VIDEO_BUTTON.innerHTML = STOP_ACCORDION_VIDEO;
       TOGGLE_VIDEO_BUTTON.disabled = false;
+
+      // Set up video state.
+      audioManagingVideo = true;
       videoRunning = true;
     })
     .catch((error) => {
       console.log("Not starting video due to error");
       console.error(error);
-      videoEnableFailed = true;
+      audioManagingVideo = false;
       TOGGLE_VIDEO_BUTTON.disabled = false;
     });
 };
 
 /**
  * Tears down video capture.
+ *
+ * The `isManagedCall` parameter specifies whether or not the call to
+ * `stopVideo` was actually triggered by the audio button.
  */
-const stopVideo = () => {
+const stopVideo = (isManagedCall) => {
   TOGGLE_VIDEO_BUTTON.blur();
   // Disable toggle until completion.
   TOGGLE_VIDEO_BUTTON.disabled = true;
+  // Manual click on `stopVideo` (audio should no longer manage video).
+  if (!isManagedCall) {
+    audioManagingVideo = false;
+  }
   shouldStopVideo = true;
   synth.setVolume(DEFAULT_VOLUME);
 };
@@ -441,7 +454,7 @@ TOGGLE_AUDIO_BUTTON.addEventListener(
 TOGGLE_VIDEO_BUTTON.innerHTML = START_ACCORDION_VIDEO;
 TOGGLE_VIDEO_BUTTON.addEventListener(
   "click",
-  () => (videoRunning ? stopVideo() : startVideo()),
+  () => (videoRunning ? stopVideo(false) : startVideo()),
   false
 );
 
