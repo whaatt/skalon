@@ -1,0 +1,5 @@
++ .htaccess
+- **/.*
+- README.md
+- stylelint.config.js
+- upload.sh
