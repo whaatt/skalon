@@ -27,8 +27,8 @@ const START_ACCORDION_AUDIO = "Start Laptop Accordion";
 const STOP_ACCORDION_AUDIO = "Stop Laptop Accordion";
 const SELECT_CUSTOM_MIDI_FILE_ERROR = "[read error]";
 const SELECT_CUSTOM_MIDI_FILE_LOADED = "Loaded MIDI:";
-const SONG_OPTION_FREE_PLAY = "Free Play";
-const SONG_OPTION_CUSTOM_MIDI = "Custom MIDI";
+const SONG_OPTION_FREE_PLAY = "None (Free Play)";
+const SONG_OPTION_CUSTOM_MIDI = "Custom Loaded MIDI";
 const SONG_OPTION_CUSTOM_MIDI_ID = "song-option-custom-midi";
 
 // General audio state:
@@ -51,8 +51,8 @@ const TOGGLE_VIDEO_BUTTON = document.getElementById("toggle-video-button");
 const VIDEO_INPUT = document.getElementById("video-input");
 
 // Video constants.
-const START_ACCORDION_VIDEO = "Start Webcam Motion Tracking";
-const STOP_ACCORDION_VIDEO = "Stop Webcam Motion Tracking";
+const START_ACCORDION_VIDEO = "Track Webcam Motion for Dynamics";
+const STOP_ACCORDION_VIDEO = "Stop Tracking Webcam for Dynamics";
 
 // General video state:
 let videoRunning = false;
