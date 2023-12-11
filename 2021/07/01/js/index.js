@@ -88,6 +88,7 @@ const setSnapGridDefaults = (target) => {
     modifiers: [
       interact.modifiers.restrictRect({
         restriction: "parent",
+        endOnly: true,
       }),
       interact.modifiers.snap({
         targets: [
@@ -437,8 +438,7 @@ const useInteractivityMode = async (target) => {
       );
       event.target.style.zIndex = 1;
     })
-    .on("resizeend", () => reconcilePosterBox())
-    .reflow({ name: "drag", axis: "xy" });
+    .on("resizeend", () => reconcilePosterBox());
   setSnapGridDefaults(target);
 };
 
