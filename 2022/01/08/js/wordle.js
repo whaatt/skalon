@@ -14655,7 +14655,7 @@ const ROW_COUNT = 10;
                     return s;
                   };
                   if (this.remainingWords === undefined) {
-                    this.remainingWords = Ca;
+                    this.remainingWords = EVIL_LEXICON;
                   }
                   console.log("Guess was:", s);
                   console.log("Current solution is:", this.solution);
