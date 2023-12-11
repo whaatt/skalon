@@ -20,7 +20,6 @@ const CRITERIA = new cv.TermCriteria(
 // Articulation parameters.
 const FRAMES_PER_SECOND = 60;
 const HALF_LIFE_SAMPLES_ACCELERATION = FRAMES_PER_SECOND / 10;
-const SIGMOID_SCALING_FACTOR = 0.25;
 
 // Empty matrix constant.
 const NONE = new cv.Mat();
@@ -179,8 +178,7 @@ class Flow {
     // of the accordion instrument. We take the unbounded positive acceleration
     // value and squash to [0, 1] using a modified sigmoid function.
     const sigmoidSquashed = (1 / (1 + Math.exp(-this.accelerationY))) * 2 - 1;
-    // Scale the sigmoid since a maximum gain of 1.0 is aggro.
-    this.articulation = sigmoidSquashed * SIGMOID_SCALING_FACTOR;
+    this.articulation = sigmoidSquashed;
   }
 }
 
