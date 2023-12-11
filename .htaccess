@@ -1,13 +1,12 @@
-DirectoryIndex index.html
+DirectorySlash Off
 RewriteEngine On
 
-# Remove trailing slashes on files.
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)/$ /$1 [R=301,NE]
+RewriteRule (.*) $1/ [L,NE]
 
 # Enforce HTTPS.
 RewriteCond %{HTTPS} !=on
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NE]
 
-# Redirect 404s to the home page.
+# Redirect 404s and 403s to the home page.
+ErrorDocument 403 https://skalon.com
 ErrorDocument 404 https://skalon.com
