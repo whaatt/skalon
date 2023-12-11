@@ -14572,10 +14572,15 @@ const ROW_COUNT = 10;
                     a = this.$board.querySelectorAll("game-row")[this.rowIndex],
                     s = this.boardState[this.rowIndex];
                   a.scrollIntoView(false);
-                  if (((e = s), !Ca.includes(e) && !Ta.includes(e)))
+                  if (
+                    ((e = s),
+                    !Ca.includes(e) &&
+                      !Ta.includes(e) &&
+                      !EVIL_LEXICON.includes(e))
+                  )
                     return (
                       a.setAttribute("invalid", ""),
-                      void this.addToast("Not in word list")
+                      void this.addToast("Not in evil word list")
                     );
                   if (this.hardMode) {
                     var t = (function (e, a, s) {
