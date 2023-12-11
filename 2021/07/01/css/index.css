@@ -272,3 +272,7 @@ a:not([disabled]):hover {
   margin-left: 0.5em;
   color: #eee;
 }
+
+#published {
+  display: none;
+}

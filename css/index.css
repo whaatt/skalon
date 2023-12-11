@@ -95,6 +95,10 @@ pre {
   font-family: "Modernist", sans-serif;
 }
 
+#published {
+  display: none;
+}
+
 #title {
   font-weight: bold;
   font-size: 120%;
