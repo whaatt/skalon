@@ -1,7 +1,3 @@
 {
-  "recommendations": [
-    "esbenp.prettier-vscode",
-    "foxundermoon.shell-format",
-    "stylelint.vscode-stylelint"
-  ]
+  "recommendations": ["esbenp.prettier-vscode", "foxundermoon.shell-format"]
 }

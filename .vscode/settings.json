@@ -1,5 +1,4 @@
 {
-  "css.validate": false,
   "editor.codeActionsOnSave": {
     "source.fixAll": true,
     "source.organizeImports": true
@@ -28,6 +27,5 @@
   "[xml]": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "stylelint.enable": true
+  }
 }
