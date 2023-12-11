@@ -9,7 +9,6 @@ body {
 
 body {
   display: flex;
-  align-items: center;
   justify-content: center;
   background: #111;
   color: #eee;
@@ -20,6 +19,29 @@ body {
 
 #content {
   width: 300px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+@media screen and (max-height: 820px) {
+  #content {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+  #logo {
+    display: none;
+  }
+}
+
+@media screen and (max-height: 580px) {
+  #keyboard {
+    display: none;
+  }
+
+  #prev-next {
+    margin-top: 10px;
+  }
 }
 
 button,
