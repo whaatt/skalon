@@ -57,7 +57,7 @@ a:not([disabled]):hover {
 #content {
   box-sizing: border-box;
   padding-left: max(5%, 20px);
-  padding-right: max(5%, 35px);
+  padding-right: max(calc(5% + 15px), 35px);
   padding-top: 30px;
   padding-bottom: 20px;
   width: 100%;
