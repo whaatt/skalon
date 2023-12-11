@@ -24,5 +24,22 @@ RewriteCond %{REQUEST_FILENAME} -d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*[^/])$ /$1/ [L,NC,NE,R=301]
 
+# Disable caching of most static files.
+<FilesMatch "\.(css|html|js)$">
+  <IfModule mod_expires.c>
+		ExpiresActive Off
+	</IfModule>
+	<IfModule mod_headers.c>
+		FileETag None
+		Header unset ETag
+		Header unset Pragma
+		Header unset Cache-Control
+		Header unset Last-Modified
+		Header set Pragma "no-cache"
+		Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+		Header set Expires "Mon, 10 Apr 1972 00:00:00 GMT"
+	</IfModule>
+</FilesMatch>
+
 # Redirect 404s to the home page.
 ErrorDocument 404 https://skalon.com
