@@ -51,8 +51,8 @@ const TOGGLE_VIDEO_BUTTON = document.getElementById("toggle-video-button");
 const VIDEO_INPUT = document.getElementById("video-input");
 
 // Video constants.
-const START_ACCORDION_VIDEO = "Start Screen Motion Tracking";
-const STOP_ACCORDION_VIDEO = "Stop Screen Motion Tracking";
+const START_ACCORDION_VIDEO = "Start Webcam Motion Tracking";
+const STOP_ACCORDION_VIDEO = "Stop Webcam Motion Tracking";
 
 // General video state:
 let videoRunning = false;
