@@ -500,7 +500,7 @@ const ROW_COUNT = 10;
                   ? a.classList.add("nightmode")
                   : a.classList.remove("nightmode"),
                   (this.isDarkTheme = e);
-                //   window.localStorage.setItem(j, JSON.stringify(e));
+                window.localStorage.setItem(j, JSON.stringify(e));
               },
             },
             {
@@ -511,7 +511,7 @@ const ROW_COUNT = 10;
                   ? a.classList.add("colorblind")
                   : a.classList.remove("colorblind"),
                   (this.isColorBlindTheme = e);
-                //   window.localStorage.setItem(S, JSON.stringify(e));
+                window.localStorage.setItem(S, JSON.stringify(e));
               },
             },
             {
