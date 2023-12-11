@@ -12,12 +12,13 @@ RewriteRule ^.*$ /$0 [L,NC,NE,R=301]
 RewriteRule ^index\.html$ / [L,NC,NE,R=301]
 RewriteRule ^(.*)/index\.html$ /$1/ [L,NC,NE,R=301]
 
-# Redirect nonexistent root directory files to the directory of the latest post.
-RewriteRule ^/*$ /2022/01/08/ [L,NC,NE,R=307]
-RewriteCond %{REQUEST_URI} !^/.*/.*$
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(.*)$ /2022/01/08/$1 [L,NC,NE,R=307]
+# DEPRECATED: Redirect nonexistent root directory files to the directory of the
+# latest post.
+# RewriteRule ^/*$ /2022/01/08/ [L,NC,NE,R=307]
+# RewriteCond %{REQUEST_URI} !^/.*/.*$
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteRule ^(.*)$ /2022/01/08/$1 [L,NC,NE,R=307]
 
 # Canonicalize valid directory URLs to have at least one trailing slash.
 RewriteCond %{REQUEST_FILENAME} -d

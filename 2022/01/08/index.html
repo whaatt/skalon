@@ -1,56 +1,69 @@
 <!DOCTYPE html>
 <html class="no-js" lang="en">
   <head>
-    <title>evil wordle</title>
-    <meta charset="utf-8" />
+    <!-- Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-HN83PYR9V7"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-HN83PYR9V7");
+    </script>
 
-    <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <meta name="description" content="evil wordle" />
+    <!-- Page Info -->
+    <title>evil wordle</title>
     <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no"
+      name="description"
+      content="yeah yeah we all took the same course in college with evil hangman"
     />
 
+    <!-- Meta Tags -->
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Icons -->
+    <meta name="apple-mobile-web-app-title" content="Skalon" />
+    <meta name="application-name" content="Skalon" />
     <link
       rel="apple-touch-icon"
       sizes="180x180"
-      href="/apple-touch-icon.png?v=Gvkj82kqwj"
+      href="/apple-touch-icon.png?version=1"
     />
     <link
       rel="icon"
       type="image/png"
       sizes="32x32"
-      href="/favicon-32x32.png?v=Gvkj82kqwj"
+      href="/favicon-32x32.png?version=1"
     />
     <link
       rel="icon"
       type="image/png"
       sizes="16x16"
-      href="/favicon-16x16.png?v=Gvkj82kqwj"
+      href="/favicon-16x16.png?version=1"
     />
-    <link rel="manifest" href="/site.webmanifest?v=Gvkj82kqwj" />
+    <link rel="manifest" href="/site.webmanifest?version=1" />
     <link
       rel="mask-icon"
-      href="/safari-pinned-tab.svg?v=Gvkj82kqwj"
-      color="#5bbad5"
+      href="/safari-pinned-tab.svg?version=1"
+      color="#000000"
     />
-    <link rel="shortcut icon" href="/favicon.ico?v=Gvkj82kqwj" />
-
-    <meta name="apple-mobile-web-app-title" content="Skalon" />
-    <meta name="application-name" content="Skalon" />
+    <link rel="shortcut icon" href="/favicon.ico?version=1" />
     <meta name="msapplication-TileColor" content="#2d89ef" />
     <meta name="theme-color" content="#ffffff" />
 
+    <!-- Styles -->
     <link rel="stylesheet" href="/css/vendor/normalize.css" />
     <!-- The following cribbed directly from real Wordle. -->
     <link rel="stylesheet" href="css/wordle.css" />
   </head>
   <body spellcheck="false">
     <game-app></game-app>
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=UA-757876-9"
-    ></script>
     <script src="js/index.js"></script>
     <!-- The following cribbed and modified from real Wordle. -->
     <script src="js/wordle.js"></script>
