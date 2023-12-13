@@ -9,7 +9,8 @@ SCRIPT_DIRECTORY=$(
 )
 
 REMOTE_USERNAME="whaatt00"
-REMOTE_DOMAIN="skalon.com"
+# Need to inject this on invocation.
+# REMOTE_DOMAIN="skalon.com"
 REMOTE_PORT="7822"
 REMOTE_PATH="public_html"
 
