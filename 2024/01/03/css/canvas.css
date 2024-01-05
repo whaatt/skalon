@@ -1,0 +1,12 @@
+.ascii-canvas-cell {
+  -webkit-user-select: none;
+  display: inline-block;
+  cursor: cell;
+  border: 1px solid #ddd;
+  padding: 0.09375em;
+  user-select: none;
+}
+
+.ascii-canvas-cell:hover {
+  background-color: pink;
+}

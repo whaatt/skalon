@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+  <head>
+    <!-- Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-HN83PYR9V7"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-HN83PYR9V7");
+    </script>
+
+    <!-- Page Info -->
+    <title>ascii doodle</title>
+    <link rel="canonical" href="https://skalon.com/2018/05/01/" />
+    <meta
+      name="description"
+      content="yet another tiny paint app for ascii art"
+    />
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Icons -->
+    <meta name="apple-mobile-web-app-title" content="Skalon" />
+    <meta name="application-name" content="Skalon" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <meta name="msapplication-TileColor" content="#2d89ef" />
+    <meta name="theme-color" content="#ffffff" />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/vendor/normalize.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Slab&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/vendor/coloris.min.css" />
+    <link rel="stylesheet" href="css/canvas.css" />
+    <link rel="stylesheet" href="css/index.css" />
+  </head>
+  <body>
+    <div id="content">
+      <pre id="header">
+~~~~~~~~~~~~~~~~~~~~~~
+# <a href="/">Prev</a>...<a href="/">Home</a>...<a disabled>Next</a> #
+~~~~~~~~~~~~~~~~~~~~~~
+# <span class="title">ascii doodle 0.0.1</span> #
+~~~~~~~~~~~~~~~~~~~~~~</pre>
+      <div class="controls">
+        <div class="controls-line">
+          <button type="button" class="control-button" disabled>Draw</button>
+          <input id="letter-picker" type="text" value="#" maxlength="1" />
+          <input id="color-picker" type="text" data-coloris value="#000000" />
+          <span class="separator">//</span>
+          <button type="button" class="control-button">Erase</button>
+        </div>
+      </div>
+      <pre id="canvas"></pre>
+      <div class="controls controls-bottom">
+        <div class="controls-line">
+          <button type="button" class="control-button">Select HTML</button>
+          <span class="separator">//</span>
+          <button type="button" class="control-button">Select Raw</button>
+        </div>
+      </div>
+      <div id="published">3 January 2024</div>
+    </div>
+    <script src="js/vendor/coloris.min.js" type="module"></script>
+    <script src="js/index.js" type="module"></script>
+  </body>
+</html>

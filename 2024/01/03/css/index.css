@@ -1,0 +1,166 @@
+@font-face {
+  src: url("/css/fonts/Sk-Modernist Regular.otf") format("opentype");
+  font-family: "Modernist";
+  font-display: swap;
+}
+
+@font-face {
+  font-weight: bold;
+  src: url("/css/fonts/Sk-Modernist Bold.otf") format("opentype");
+  font-family: "Modernist";
+  font-display: swap;
+}
+
+@font-face {
+  src: url("/css/fonts/Sk-Modernist Mono.otf") format("opentype");
+  font-family: "Modernist Mono";
+  font-display: swap;
+}
+
+html,
+body {
+  -webkit-user-select: none;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+a {
+  color: blue;
+  text-decoration: none;
+}
+
+a:visited {
+  color: blue;
+}
+
+a[disabled] {
+  color: #aaa;
+}
+
+#content {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 20px;
+  padding-bottom: 0;
+  width: 100%;
+  min-width: 320px;
+  max-width: 992px;
+  height: 100%;
+  min-height: 576px;
+  max-height: 1200px;
+  font-family: "Modernist Mono", monospace;
+}
+
+pre {
+  font-family: "Modernist Mono", monospace;
+}
+
+#header {
+  -webkit-user-select: auto;
+  margin: 0;
+  margin-bottom: 2em;
+  font-size: 90%;
+  font-family: "Modernist Mono", monospace;
+  user-select: auto;
+}
+
+#header .title {
+  color: magenta;
+}
+
+#header .header-border {
+  color: black;
+}
+
+.controls {
+  margin-bottom: 1em;
+  font-size: 70%;
+}
+
+.controls.controls-bottom {
+  margin-top: 1em;
+  margin-bottom: 0;
+  padding-bottom: 20px;
+}
+
+.controls .controls-line:not(:first-child) {
+  margin-top: 0.2em;
+}
+
+.controls .control-button {
+  display: inline-block;
+  cursor: pointer;
+  margin: 0;
+  outline: 0;
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 1px 0px 0px;
+  border: 1px solid #000;
+  border-radius: 4px;
+  background: #ffffff;
+  padding: 0.25em 1em;
+  color: #202223;
+  text-align: center;
+}
+
+.controls .control-button:hover {
+  outline: 1px solid transparent;
+  background: #f6f6f7;
+}
+
+.controls .control-button:disabled {
+  background: black;
+  color: white;
+}
+
+.controls .control-button:disabled:hover {
+  cursor: default;
+  outline: inherit;
+  background: black;
+  color: white;
+}
+
+.controls .separator {
+  margin-right: 0.2em;
+  margin-left: 0.2em;
+  color: magenta;
+  font-size: 80%;
+}
+
+#color-picker {
+  outline: none;
+  border: none;
+  padding: 0;
+  width: 3ch;
+  height: 20px;
+}
+
+.clr-field button {
+  /* border-radius: 4px; */
+  width: 100%;
+}
+
+#letter-picker {
+  margin: 0;
+  outline: 0;
+  border: 1px solid #222;
+  /* border-radius: 4px; */
+  background-color: #eee;
+  padding: 0.25em 0;
+  width: 3ch;
+  height: calc(20px - 0.5em - 2px);
+  text-align: center;
+}
+
+#canvas {
+  flex: 1;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-right: 20px;
+  width: calc(100% - 20px);
+  line-height: 1;
+}
+
+#published {
+  display: none;
+}
