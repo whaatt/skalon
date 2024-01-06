@@ -115,6 +115,24 @@ const interpolatePoints = (r0, c0, r1, c1) => {
 };
 
 /**
+ * Returns the corners for the rectangle defined by the start and end points of
+ * path (especially when those points are not ordered ascending).
+ *
+ * @param {Array<[number, number]>} path
+ * @returns {[[number, number],[number, number]]}
+ */
+const getRectangleCorners = (path) => {
+  const lastIndex = path.length - 1;
+  const start = path[0];
+  const end = path[lastIndex];
+  /** @type {[number, number]} */
+  const minimum = [Math.min(start[0], end[0]), Math.min(start[1], end[1])];
+  /** @type {[number, number]} */
+  const maximum = [Math.max(start[0], end[0]), Math.max(start[1], end[1])];
+  return [minimum, maximum];
+};
+
+/**
  * Returns the set of points in the rectangular region defined by the start and
  * end of the passed `path`.
  *
@@ -126,20 +144,9 @@ const getRectanglePoints = (path) => {
     return [];
   }
 
-  const lastIndex = path.length - 1;
-  const start = path[0];
-  const end = path[lastIndex];
-  const [rowMin, columnMin] = [
-    Math.min(start[0], end[0]),
-    Math.min(start[1], end[1]),
-  ];
-  const [rowMax, columnMax] = [
-    Math.max(start[0], end[0]),
-    Math.max(start[1], end[1]),
-  ];
-
   /** @type {Array<[number, number]>} */
   const resultSet = [];
+  const [[rowMin, columnMin], [rowMax, columnMax]] = getRectangleCorners(path);
   for (let row = rowMin; row <= rowMax; row += 1) {
     for (let column = columnMin; column <= columnMax; column += 1) {
       resultSet.push([row, column]);
@@ -304,8 +311,8 @@ const fitCharacterDimensions = (element) => {
 
 /** @typedef {EditMode[keyof EditMode]} EditModeValue */
 const EditMode = /** @type {const} */ ({
-  SelectHtml: "SelectHtml",
-  SelectRaw: "SelectRaw",
+  GrabHtml: "GrabHtml",
+  GrabText: "GrabText",
   Draw: "Draw",
 });
 
@@ -324,16 +331,31 @@ const FillMode = /** @type {const} */ ({
     }} InteractionState
 */
 
+/** @typedef {{
+      element: HTMLPreElement,
+      gridInitial: Uint8Array | null,
+      colorInitial: Uint32Array | null,
+      getInteractionState: () => InteractionState,
+      storeGridAndColor: (value: {grid: Uint8Array, color: Uint32Array}) => Promise<void>,
+      onCopied: (editMode: EditModeValue) => void
+      onNavigated: () => void
+    }} AsciiCanvasParameters
+*/
+
 let instanceCounter = 0;
 class AsciiCanvas {
   /**
-   * @param {HTMLPreElement} element
-   * @param {Uint8Array | null} gridInitial
-   * @param {Uint32Array | null} colorInitial
-   * @param {() => InteractionState} getInteractionState
-   * @param {(value: {grid: Uint8Array, color: Uint32Array}) => Promise<void>} store
+   * @param {AsciiCanvasParameters} parameter
    */
-  constructor(element, gridInitial, colorInitial, getInteractionState, store) {
+  constructor({
+    element,
+    gridInitial,
+    colorInitial,
+    getInteractionState,
+    storeGridAndColor,
+    onCopied,
+    onNavigated,
+  }) {
     const [width, height] = fitCharacterDimensions(element);
 
     /** @type {number} */
@@ -347,8 +369,12 @@ class AsciiCanvas {
 
     /** @type {typeof getInteractionState} */
     this.getInteractionState = getInteractionState;
-    /** @type {typeof store} */
-    this.store = store;
+    /** @type {typeof storeGridAndColor} */
+    this.storeGridAndColor = storeGridAndColor;
+    /** @type {typeof onCopied} */
+    this.onCopied = onCopied;
+    /** @type {typeof onNavigated} */
+    this.onNavigated = onNavigated;
 
     if (gridInitial === null) {
       /** @type {Uint8Array} */
@@ -370,9 +396,14 @@ class AsciiCanvas {
     this.gridScratch = new Uint8Array(this.grid);
     /** @type {Uint32Array} */
     this.colorScratch = new Uint32Array(this.color);
-    this.flush();
+    /** @type {Array<[boolean, Array<[number, number, number | null, number | null]>]>} */
+    this.undoStack = [];
+    /** @type {Array<[boolean, Array<[number, number, number | null, number | null]>]>} */
+    this.redoStack = [];
+    this.flush({ isInitial: true });
 
     // Handle canvas resizing:
+    /** @type {number} */
     let runningResizeTimeout;
     window.addEventListener("resize", () => {
       clearTimeout(runningResizeTimeout);
@@ -464,8 +495,45 @@ class AsciiCanvas {
   }
 
   /**
+   * @param {[[number, number],[number, number]]} range
+   * @returns {string}
+   */
+  renderRangeToMarkup(range) {
+    const newElement = document.createElement("pre");
+    for (let row = range[0][0]; row <= range[1][0]; row += 1) {
+      for (let column = range[0][1]; column <= range[1][1]; column += 1) {
+        const index = this.rowColToIndex(row, column);
+        const span = document.createElement("span");
+        span.style.color = uint32ToRgbaString(this.color[index]);
+        span.innerHTML = chr(this.grid[index]);
+        newElement.appendChild(span);
+      }
+      newElement.appendChild(new Text("\n"));
+    }
+    return newElement.outerHTML;
+  }
+
+  /**
+   * @param {[[number, number],[number, number]]} range
+   * @returns {string}
+   */
+  renderRangeToRawText(range) {
+    let rawText = "";
+    for (let row = range[0][0]; row <= range[1][0]; row += 1) {
+      for (let column = range[0][1]; column <= range[1][1]; column += 1) {
+        const index = this.rowColToIndex(row, column);
+        rawText += chr(this.grid[index]);
+      }
+      rawText += "\n";
+    }
+    return rawText;
+  }
+
+  /**
    * Sets the character and/or color for the given row and column. This call
    * will batch the mutation to be executed the next time `flush` is called.
+   *
+   * NOTE: This mutation needs flushing for application.
    *
    * @param {number} row
    * @param {number} column
@@ -483,6 +551,26 @@ class AsciiCanvas {
   }
 
   /**
+   * NOTE: This mutation needs flushing for application.
+   *
+   * @param {number} row
+   * @param {number} column
+   * @param {number | null} valueInternal
+   * @param {number | null} colorInternal
+   */
+  setInternal(row, column, valueInternal, colorInternal) {
+    const index = this.rowColToIndex(row, column);
+    if (valueInternal !== null) {
+      this.gridScratch[index] = valueInternal;
+    }
+    if (colorInternal !== null) {
+      this.colorScratch[index] = colorInternal;
+    }
+  }
+
+  /**
+   * NOTE: This mutation needs flushing for application.
+   *
    * @param {(row: number, column: number) => [MaybeValue, MaybeRgba]} transform
    */
   range(transform) {
@@ -494,8 +582,9 @@ class AsciiCanvas {
   }
 
   /**
-   * Resets the grid to its default state. Note that the mutation must still be
-   * flushed.
+   * Resets the grid to its default state.
+   *
+   * NOTE: This mutation needs flushing for application.
    */
   reset() {
     this.gridScratch.fill(ord("."));
@@ -503,20 +592,82 @@ class AsciiCanvas {
   }
 
   /**
-   * Flushes any pending grid or color mutations to the DOM.
+   * @returns {boolean}
    */
-  flush(shouldStore = true) {
+  canUndo() {
+    return this.undoStack.length > 0;
+  }
+
+  /**
+   * Pops and applies a  from the undo stack.
+   *
+   * NOTE: This mutation needs flushing for application (when a corresponding
+   * `redo` operation will be generated).
+   */
+  undo() {
+    const undoGroup = this.undoStack.pop();
+    if (undoGroup === undefined) {
+      return;
+    }
+    for (const [row, column, value, color] of undoGroup[1]) {
+      this.setInternal(row, column, value, color);
+    }
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  canRedo() {
+    return this.redoStack.length > 0;
+  }
+
+  /**
+   * Pops and applies a group of operations from the redo stack.
+   *
+   * NOTE: This mutation needs flushing for application (when a corresponding
+   * `undo` operation will be generated).
+   */
+  redo() {
+    const redoGroup = this.redoStack.pop();
+    if (redoGroup === undefined) {
+      return;
+    }
+    for (const [row, column, value, color] of redoGroup[1]) {
+      this.setInternal(row, column, value, color);
+    }
+  }
+
+  /**
+   * Flushes any pending grid or color mutations to the DOM and updates the
+   * undo/redo stacks.
+   *
+   * @optional @param {{
+   *   isInitial?: boolean,
+   *   isUndo?: boolean,
+   *   isRedo?: boolean,
+   *   isReset?: boolean
+   * }} parameter
+   */
+  flush({ isInitial, isUndo, isRedo, isReset } = {}) {
+    /** @type {Array<[number, number, number | null, number | null]>} */
+    const inverseOperations = [];
     for (let row = 0; row < this.height; row += 1) {
       for (let column = 0; column < this.width; column += 1) {
         const index = this.rowColToIndex(row, column);
         const newValue = this.gridScratch[index];
         const newColor = this.colorScratch[index];
 
+        // Queue an inverse operation only for changed cells.
+        if (this.grid[index] !== newValue || this.color[index] !== newColor) {
+          inverseOperations.push([row, column, null, null]);
+        }
+
         /** @type {HTMLElement | null | undefined} */
         let cell = undefined;
 
         // Update cell value if necessary.
         if (this.grid[index] !== newValue) {
+          inverseOperations[inverseOperations.length - 1][2] = this.grid[index];
           this.grid[index] = newValue;
           if (cell === undefined) {
             cell = this.getCell(row, column);
@@ -528,6 +679,8 @@ class AsciiCanvas {
 
         // Update cell color if necessary.
         if (this.color[index] !== newColor) {
+          inverseOperations[inverseOperations.length - 1][3] =
+            this.color[index];
           this.color[index] = newColor;
           if (cell === undefined) {
             cell = this.getCell(row, column);
@@ -539,9 +692,37 @@ class AsciiCanvas {
       }
     }
 
-    if (shouldStore) {
-      this.store({ grid: this.grid, color: this.color });
+    // Persist grid to storage and update the undo/redo stacks.
+    this.storeGridAndColor({ grid: this.grid, color: this.color });
+    if (isInitial) {
+      return;
     }
+    if (isUndo) {
+      // Note that we never indicate append when transforming to the redo stack.
+      this.redoStack.push([false, inverseOperations]);
+    } else if (isRedo) {
+      // Note that we never indicate append when transforming to the undo stack.
+      this.undoStack.push([false, inverseOperations]);
+    } else {
+      if (
+        this.undoStack.length > 0 &&
+        this.undoStack[this.undoStack.length - 1][0]
+      ) {
+        // Append to the group on top of the stack if it indicates doing so.
+        this.undoStack[this.undoStack.length - 1][1].push(...inverseOperations);
+      } else {
+        // Otherwise, add to the stack.
+        this.undoStack.push([
+          // Indicate append if we are in free-hand mode, which makes for a more
+          // intuitive undo operation. (Ignore resets for this purpose, which
+          // behave like their own fill mode but are not actually a fill mode.)
+          !this.getInteractionState().useFill && !isReset,
+          inverseOperations,
+        ]);
+      }
+      this.redoStack = [];
+    }
+    this.onNavigated();
   }
 
   /**
@@ -561,7 +742,9 @@ class AsciiCanvas {
     const highlightSelector = classesToSync
       .map((highlightClass) => `.${CELL_CLASS_NAME}.${highlightClass}`)
       .join(",");
-    for (const cell of document.querySelectorAll(highlightSelector)) {
+    const highlightCells = document.querySelectorAll(highlightSelector);
+    for (let i = 0; i < highlightCells.length; i += 1) {
+      const cell = highlightCells[i];
       currentElementIds[cell.id] = true;
     }
 
@@ -590,14 +773,111 @@ class AsciiCanvas {
    * Sets up listeners for the current canvas that never get removed.
    */
   listenOnce() {
-    window.addEventListener(
-      "pointerup",
-      (/** @type {PointerEvent} */ event) => {
+    // Event: Pointer pressed down anywhere.
+    window.addEventListener("pointerdown", (rawEvent) => {
+      const event = /** @type {PointerEvent} */ (rawEvent);
+      if (event.pointerType === "mouse" && event.button !== 0) {
+        // Ignore left click.
+        return;
+      }
+      const target = /** @type {HTMLElement} */ (event.target);
+      target.releasePointerCapture(event.pointerId);
+      this.pathStarted[event.pointerId] = true;
+      this.paths[event.pointerId] = [];
+    });
+
+    // Event: Pointer releases up anywhere.
+    window.addEventListener("pointerup", (rawEvent) => {
+      const event = /** @type {PointerEvent} */ (rawEvent);
+      // Ignore pointer releases if no path has been traversed.
+      if (
+        !this.pathStarted[event.pointerId] ||
+        this.paths[event.pointerId].length === 0
+      ) {
         delete this.pathStarted[event.pointerId];
         delete this.paths[event.pointerId];
-        this.syncEnabledHighlights([], Object.values(HighlightClass));
+        return;
       }
-    );
+
+      // Run contextual updates:
+      const state = this.getInteractionState();
+      // Contextual Update: Draw Mode + No Fill Mode.
+      // Action: Remove Stack Append Indication.
+      if (state.editMode === EditMode.Draw && !state.useFill) {
+        if (this.undoStack.length > 0) {
+          this.undoStack[this.undoStack.length - 1][0] = false;
+        }
+      }
+      // Contextual Update: Draw Mode + Fill Mode Fill.
+      // Action: Un-Highlight Range + Update Range.
+      else if (
+        state.editMode === EditMode.Draw &&
+        state.useFill === FillMode.Fill
+      ) {
+        this.syncEnabledHighlights([], Object.values(HighlightClass));
+        const selectionPoints = getRectanglePoints(this.paths[event.pointerId]);
+        const color = hexToRgba(state.activeColor);
+        for (const [row, column] of selectionPoints) {
+          this.set(row, column, state.useColor ? null : state.activeCharacter, [
+            color.r,
+            color.g,
+            color.b,
+            color.a,
+          ]);
+        }
+        this.flush();
+      }
+      // Contextual Update: Draw Mode + Fill Mode Lasso
+      // Action: Un-Highlight Area + Update Area.
+      else if (
+        state.editMode === EditMode.Draw &&
+        state.useFill === FillMode.Lasso
+      ) {
+        this.syncEnabledHighlights([], Object.values(HighlightClass));
+        const areaPoints = getContainedPoints(this.paths[event.pointerId]);
+        const color = hexToRgba(state.activeColor);
+        for (const [row, column] of areaPoints) {
+          this.set(row, column, state.useColor ? null : state.activeCharacter, [
+            color.r,
+            color.g,
+            color.b,
+            color.a,
+          ]);
+        }
+        this.flush();
+      }
+      // Contextual Update: Grab HTML Mode
+      // Action: Un-Highlight Area + Clip Selection (as HTML).
+      else if (state.editMode === EditMode.GrabHtml) {
+        this.syncEnabledHighlights([], Object.values(HighlightClass));
+        const markup = this.renderRangeToMarkup(
+          getRectangleCorners(this.paths[event.pointerId])
+        );
+        navigator.clipboard
+          .write([
+            new ClipboardItem({
+              "text/plain": new Blob([markup], { type: "text/plain" }),
+              "text/html": new Blob([markup], { type: "text/html" }),
+            }),
+          ])
+          .then(() => this.onCopied(state.editMode));
+      }
+      // Contextual Update: Grab Text Mode
+      // Action: Un-Highlight Area + Clip Selection (as Text).
+      else if (state.editMode === EditMode.GrabText) {
+        this.syncEnabledHighlights([], Object.values(HighlightClass));
+        const text = this.renderRangeToRawText(
+          getRectangleCorners(this.paths[event.pointerId])
+        );
+        navigator.clipboard
+          .writeText(text)
+          .then(() => this.onCopied(state.editMode));
+      }
+
+      // Delete tracked path:
+      delete this.pathStarted[event.pointerId];
+      delete this.paths[event.pointerId];
+    });
   }
 
   /**
@@ -606,18 +886,23 @@ class AsciiCanvas {
    */
   listen() {
     const cells = this.element.getElementsByClassName(CELL_CLASS_NAME);
-    for (const cell of cells) {
+    for (let i = 0; i < cells.length; i += 1) {
+      const cell = cells[i];
       // Event: Pointer pressed down in cell.
       cell.addEventListener("pointerdown", (rawEvent) => {
         const event = /** @type {PointerEvent} */ (rawEvent);
+        event.stopPropagation();
         if (event.pointerType === "mouse" && event.button !== 0) {
           // Ignore left click.
           return;
         }
-        const target = /** @type {HTMLSpanElement} */ (event.target);
+        const [row, column] = this.parseCellId(
+          /** @type {HTMLSpanElement} */ (event.target).id
+        );
+        const target = /** @type {HTMLElement} */ (event.target);
         target.releasePointerCapture(event.pointerId);
         this.pathStarted[event.pointerId] = true;
-        this.paths[event.pointerId] = [];
+        this.paths[event.pointerId] = [[row, column]];
       });
 
       // Event: Pointer enters cell.
@@ -688,7 +973,7 @@ class AsciiCanvas {
         // Contextual Update: Draw Mode + Fill Mode Lasso
         // Action: Highlight Lasso Area.
         else if (
-          state.editMode !== EditMode.Draw ||
+          state.editMode === EditMode.Draw &&
           state.useFill === FillMode.Lasso
         ) {
           const areaPoints = getContainedPoints(this.paths[event.pointerId]);
@@ -699,7 +984,7 @@ class AsciiCanvas {
         }
       });
 
-      // Event: Pointer enters cell.
+      // Event: Pointer leaves cell.
       cell.addEventListener("pointerleave", (rawEvent) => {
         const event = /** @type {PointerEvent} */ (rawEvent);
         const [row, column] = this.parseCellId(
@@ -718,70 +1003,30 @@ class AsciiCanvas {
         }
       });
 
-      // Event: Pointer releases up in cell.
+      // Event: Pointer is released in cell.
       cell.addEventListener("pointerup", (rawEvent) => {
         const event = /** @type {PointerEvent} */ (rawEvent);
-        event.stopPropagation();
         const [row, column] = this.parseCellId(
           /** @type {HTMLSpanElement} */ (event.target).id
         );
 
         // Run contextual updates:
         const state = this.getInteractionState();
-        // Contextual Update: Draw Mode + Fill Mode Fill.
-        // Action: Un-Highlight Range + Update Range.
-        if (
-          state.editMode !== EditMode.Draw ||
-          state.useFill === FillMode.Fill
-        ) {
-          this.syncEnabledHighlights([], Object.values(HighlightClass));
-          const selectionPoints = getRectanglePoints(
-            this.paths[event.pointerId]
-          );
+        // Contextual Update: Draw Mode + No Fill Mode.
+        // Action: Update Cell (edge case for click-only paths).
+        if (state.editMode === EditMode.Draw && !state.useFill) {
           const color = hexToRgba(state.activeColor);
-          for (const [row, column] of selectionPoints) {
-            this.set(
-              row,
-              column,
-              state.useColor ? null : state.activeCharacter,
-              [color.r, color.g, color.b, color.a]
-            );
-          }
+          this.set(row, column, state.useColor ? null : state.activeCharacter, [
+            color.r,
+            color.g,
+            color.b,
+            color.a,
+          ]);
           this.flush();
         }
-        // Contextual Update: Draw Mode + Fill Mode Lasso
-        // Action: Un-Highlight Area + Update Area.
-        else if (
-          state.editMode !== EditMode.Draw ||
-          state.useFill === FillMode.Lasso
-        ) {
-          this.syncEnabledHighlights([], Object.values(HighlightClass));
-          const areaPoints = getContainedPoints(this.paths[event.pointerId]);
-          const color = hexToRgba(state.activeColor);
-          for (const [row, column] of areaPoints) {
-            this.set(
-              row,
-              column,
-              state.useColor ? null : state.activeCharacter,
-              [color.r, color.g, color.b, color.a]
-            );
-          }
-          this.flush();
-        }
-
-        // Delete tracked path:
-        delete this.pathStarted[event.pointerId];
-        delete this.paths[event.pointerId];
       });
     }
   }
 }
 
-export {
-  AsciiCanvas,
-  EditMode,
-  CHAR_SPACE as SPACE_CHAR,
-  CHAR_CODE_SPACE as SPACE_CHAR_CODE,
-  chr,
-  ord,
-};
+export { AsciiCanvas, CHAR_CODE_SPACE, CHAR_SPACE, EditMode, chr, ord };

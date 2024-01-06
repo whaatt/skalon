@@ -1,8 +1,8 @@
 // @ts-check
 import {
   AsciiCanvas,
-  SPACE_CHAR_CODE as CHAR_CODE_SPACE,
-  SPACE_CHAR as CHAR_SPACE,
+  CHAR_CODE_SPACE,
+  CHAR_SPACE,
   EditMode,
   ord,
 } from "./modules/canvas.js";
@@ -17,7 +17,9 @@ const ELEMENT_ID_CANVAS = "canvas";
 const ELEMENT_ID_CHARACTER_PICKER = "character-picker";
 const ELEMENT_ID_COLOR_PICKER = "color-picker";
 const ELEMENT_ID_DRAW_OPTION_COLOR = "draw-option-color";
+const ELEMENT_ID_REDO = "redo";
 const ELEMENT_ID_RESET_CANVAS = "reset-canvas";
+const ELEMENT_ID_UNDO = "undo";
 
 // Storage management for binary data:
 const STORAGE_KEY_GRID_DATA = "gridData";
@@ -56,7 +58,7 @@ const storeGridAndColor = async (value) => {
 };
 
 // Editor state management (yes, I know I'm basically re-building React):
-/** @type {import("./modules/canvas.js").InteractionState} */
+/** @type {Record<string, any>} */
 const stateInternal = {
   editMode: EditMode.Draw,
   activeCharacter: "#",
@@ -78,9 +80,11 @@ const loadState = () => {
 /**
  * Proxy for state reads and writes.
  */
+/** @type {import("./modules/canvas.js").InteractionState} */
+// @ts-ignore
 const state = new Proxy(stateInternal, {
-  get: (target, property) => target[property],
-  set: (target, property, value) => {
+  get: (target, /** @type{string}*/ property) => target[property],
+  set: (target, /** @type{string}*/ property, value) => {
     target[property] = value;
     localStorage.setItem(property.toString(), JSON.stringify(target[property]));
     syncState();
@@ -102,14 +106,22 @@ const syncState = () => {
   /** @type {HTMLInputElement} */
   (document.getElementById(ELEMENT_ID_DRAW_OPTION_COLOR)).checked =
     state.useColor;
-  for (const element of document.getElementsByClassName(CLASS_NAME_FILL_MODE)) {
+  const fillModeElements = document.querySelectorAll(
+    `.${CLASS_NAME_FILL_MODE}`
+  );
+  for (let i = 0; i < fillModeElements.length; i += 1) {
+    const element = fillModeElements[i];
     if (element.getAttribute(DATA_ATTRIBUTE_FILL_MODE) === state.useFill) {
       /** @type {HTMLInputElement} */ (element).checked = true;
     } else {
       /** @type {HTMLInputElement} */ (element).checked = false;
     }
   }
-  for (const element of document.getElementsByClassName(CLASS_NAME_EDIT_MODE)) {
+  const editModeElements = document.querySelectorAll(
+    `.${CLASS_NAME_EDIT_MODE}`
+  );
+  for (let i = 0; i < editModeElements.length; i += 1) {
+    const element = editModeElements[i];
     if (element.getAttribute(DATA_ATTRIBUTE_EDIT_MODE) === state.editMode) {
       element.setAttribute("data-active", "true");
     } else {
@@ -157,6 +169,7 @@ const initializeEditor = async () => {
       } else {
         state.activeCharacter = target.value;
       }
+      state.editMode = EditMode.Draw;
       target.blur();
     }
   );
@@ -166,6 +179,7 @@ const initializeEditor = async () => {
     (event) => {
       const target = /** @type {HTMLInputElement} */ (event.target);
       state.activeColor = target.value;
+      state.editMode = EditMode.Draw;
     }
   );
   /** @type {HTMLInputElement} */
@@ -174,17 +188,27 @@ const initializeEditor = async () => {
     (event) => {
       const target = /** @type {HTMLInputElement} */ (event.target);
       state.useColor = target.checked;
+      state.editMode = EditMode.Draw;
     }
   );
-  for (const element of document.getElementsByClassName(CLASS_NAME_FILL_MODE)) {
+  const fillModeElements = document.querySelectorAll(
+    `.${CLASS_NAME_FILL_MODE}`
+  );
+  for (let i = 0; i < fillModeElements.length; i += 1) {
+    const element = fillModeElements[i];
     element.addEventListener("change", (event) => {
       const target = /** @type {HTMLInputElement} */ (event.target);
       state.useFill = target.checked
         ? target.getAttribute(DATA_ATTRIBUTE_FILL_MODE) || false
         : false;
+      state.editMode = EditMode.Draw;
     });
   }
-  for (const element of document.getElementsByClassName(CLASS_NAME_EDIT_MODE)) {
+  const editModeElements = document.querySelectorAll(
+    `.${CLASS_NAME_EDIT_MODE}`
+  );
+  for (let i = 0; i < editModeElements.length; i += 1) {
+    const element = editModeElements[i];
     element.addEventListener("click", (event) => {
       element.setAttribute(DATA_ATTRIBUTE_ACTIVE, "true");
       const newEditMode =
@@ -194,9 +218,8 @@ const initializeEditor = async () => {
       if (newEditMode !== null) {
         state.editMode = newEditMode;
       }
-      for (const otherElement of document.getElementsByClassName(
-        CLASS_NAME_EDIT_MODE
-      )) {
+      for (let j = 0; j < editModeElements.length; j += 1) {
+        const otherElement = editModeElements[j];
         if (otherElement !== element) {
           otherElement.removeAttribute(DATA_ATTRIBUTE_ACTIVE);
         }
@@ -211,33 +234,109 @@ const initializeEditor = async () => {
   if (!canvasElement) {
     return;
   }
-  const canvas = new AsciiCanvas(
-    /** @type {HTMLPreElement} */ (canvasElement),
-    grid,
-    color,
-    () => state,
-    storeGridAndColor
+  const canvas = new AsciiCanvas({
+    element: /** @type {HTMLPreElement} */ (canvasElement),
+    gridInitial: grid,
+    colorInitial: color,
+    getInteractionState: () => state,
+    storeGridAndColor,
+    onCopied: (editMode) => {
+      const element = /** @type {HTMLButtonElement | null} */ (
+        document.querySelector(`[${DATA_ATTRIBUTE_EDIT_MODE}="${editMode}"]`)
+      );
+      if (element !== null) {
+        const lastInner = element.innerHTML;
+        // Spaces here are to keep the same monospace width. Super hacky...
+        element.innerHTML = "&nbsp;Copied!&nbsp;";
+        const lastColor = element.style.color;
+        element.style.color = "black";
+        const lastBackground = element.style.background;
+        element.style.background = "lightgreen";
+        setTimeout(() => {
+          element.innerHTML = lastInner;
+          element.style.color = lastColor;
+          element.style.background = lastBackground;
+        }, 500);
+      }
+    },
+    onNavigated: () => {
+      /** @type {HTMLInputElement} */ (
+        document.getElementById(ELEMENT_ID_UNDO)
+      ).disabled = !canvas.canUndo();
+      /** @type {HTMLInputElement} */ (
+        document.getElementById(ELEMENT_ID_REDO)
+      ).disabled = !canvas.canRedo();
+    },
+  });
+  const undo = () => {
+    if (canvas.canUndo()) {
+      canvas.undo();
+      canvas.flush({ isUndo: true });
+    }
+  };
+  /** @type {HTMLInputElement} */
+  (document.getElementById(ELEMENT_ID_UNDO)).addEventListener("click", () =>
+    undo()
+  );
+  const redo = () => {
+    if (canvas.canRedo()) {
+      canvas.redo();
+      canvas.flush({ isRedo: true });
+    }
+  };
+  /** @type {HTMLInputElement} */
+  (document.getElementById(ELEMENT_ID_REDO)).addEventListener("click", () =>
+    redo()
   );
   /** @type {HTMLInputElement} */
   (document.getElementById(ELEMENT_ID_RESET_CANVAS)).addEventListener(
     "click",
     () => {
+      state.editMode = EditMode.Draw;
       canvas.reset();
-      canvas.flush();
+      canvas.flush({ isReset: true });
     }
   );
+
+  // Attach a few handy shortcuts. More to be considered...
+  window.addEventListener("keydown", (event) => {
+    if (event.metaKey === true || event.ctrlKey === true) {
+      // Windows Redo:
+      if (event.key === "y") {
+        redo();
+        event.preventDefault();
+      } else if (event.key === "z") {
+        // Mac Redo:
+        if (event.shiftKey === true) {
+          redo();
+        }
+        // Mac Undo:
+        else {
+          undo();
+        }
+        event.preventDefault();
+        return false;
+      }
+    } else {
+      // Easy character change:
+      const code = event.key.charCodeAt(0);
+      if (event.key.length === 1 && code >= 32 && code <= 127) {
+        state.activeCharacter = event.key;
+        event.preventDefault();
+      }
+    }
+  });
 };
 
 // We have to wait for ready since this script is loaded as a module.
 window.onload = () => initializeEditor();
 
 // TODO:
-// 1. Implement select mode (HTML with standardized output)
-// 2. Implement select mode (raw text)
-// 3. Implement undo/redo stack as un-flush operation
-// 4. Implement paste raw (pre-formatted) text
+// 1. Implement paste raw or HTML (pre-formatted) text
+// 2. Link with previous blog post
+// 3. Quick demo video?
 // ?. (Stretch) Marker size tools?
-// ?. (Stretch) Keyboard shortcuts?
+// ?. (Stretch) More keyboard shortcuts?
 // ?. (Stretch) Linking ability?
 // ?. (Stretch) Pressure support?
 // ?. (Stretch) Animation support?

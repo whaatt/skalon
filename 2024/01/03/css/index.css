@@ -59,12 +59,10 @@ pre {
 }
 
 #header {
-  -webkit-user-select: auto;
   margin: 0;
   margin-bottom: 2em;
   font-size: 90%;
   font-family: "Modernist Mono", monospace;
-  user-select: auto;
 }
 
 #header .title {

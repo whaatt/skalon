@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Source: https://github.com/misund/hex-to-rgba/blob/master/src/index.js.
 const removeHash = (hex) => (hex.charAt(0) === "#" ? hex.slice(1) : hex);
 

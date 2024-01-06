@@ -3,7 +3,6 @@
   display: inline-block;
   cursor: cell;
   border: 1px dotted #ddd;
-  padding: 0.09375em;
   user-select: none;
 }
 
