@@ -2,11 +2,16 @@
   -webkit-user-select: none;
   display: inline-block;
   cursor: cell;
-  border: 1px solid #ddd;
+  border: 1px dotted #ddd;
   padding: 0.09375em;
   user-select: none;
 }
 
-.ascii-canvas-cell:hover {
-  background-color: pink;
+.ascii-canvas-cell.highlight-selection {
+  background-color: #000;
+  color: white !important;
+}
+
+.ascii-canvas-cell.highlight-boundary {
+  background-color: #aaa;
 }

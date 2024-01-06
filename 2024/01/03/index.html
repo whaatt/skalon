@@ -61,24 +61,114 @@
 ~~~~~~~~~~~~~~~~~~~~~~</pre>
       <div class="controls">
         <div class="controls-line">
-          <button type="button" class="control-button" disabled>Draw</button>
-          <input id="letter-picker" type="text" value="#" maxlength="1" />
+          <input
+            id="character-picker"
+            type="text"
+            value="#"
+            placeholder="⎵"
+            maxlength="1"
+          />
           <input id="color-picker" type="text" data-coloris value="#000000" />
-          <span class="separator">//</span>
-          <button type="button" class="control-button">Erase</button>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <label class="draw-option" for="draw-option-fill">
+              <input
+                type="checkbox"
+                id="draw-option-fill"
+                name="draw-option-fill"
+                data-fill-mode="Fill"
+                class="control-button fill-mode"
+              />
+              <label for="draw-option-fill">Fill</label>
+            </label>
+          </div>
+          <label class="draw-option fill-mode" for="draw-option-lasso">
+            <input
+              type="checkbox"
+              id="draw-option-lasso"
+              name="draw-option-lasso"
+              data-fill-mode="Lasso"
+              class="control-button fill-mode"
+            />
+            <label for="draw-option-lasso">Lasso</label>
+          </label>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <label class="draw-option" for="draw-option-color" data-active>
+              <input
+                type="checkbox"
+                id="draw-option-color"
+                name="draw-option-color"
+                class="control-button"
+              />
+              <label for="draw-option-color">Recolor</label>
+            </label>
+          </div>
+          <div class="navigation-item separator-container">
+            <span class="separator">//</span
+            ><button
+              type="button"
+              id="undo"
+              class="control-button hide-narrow"
+              disabled
+            >
+              ←
+            </button>
+          </div>
+          <button
+            type="button"
+            id="redo"
+            class="navigation-item control-button"
+            disabled
+          >
+            →
+          </button>
+          <button
+            type="button"
+            id="reset-canvas"
+            class="navigation-item control-button"
+          >
+            ⦸
+          </button>
         </div>
       </div>
       <pre id="canvas"></pre>
       <div class="controls controls-bottom">
         <div class="controls-line">
-          <button type="button" class="control-button">Select HTML</button>
-          <span class="separator">//</span>
-          <button type="button" class="control-button">Select Raw</button>
+          <button
+            type="button"
+            class="control-button edit-mode"
+            data-edit-mode="Draw"
+            data-active
+          >
+            Draw
+          </button>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <button
+              type="button"
+              class="control-button edit-mode"
+              data-edit-mode="SelectHtml"
+            >
+              Select HTML
+            </button>
+          </div>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <button
+              type="button"
+              class="control-button edit-mode"
+              data-edit-mode="SelectRaw"
+            >
+              Raw
+            </button>
+          </div>
         </div>
       </div>
       <div id="published">3 January 2024</div>
     </div>
-    <script src="js/vendor/coloris.min.js" type="module"></script>
+    <script src="js/vendor/coloris.min.js"></script>
+    <script src="js/vendor/idbkvstore.min.js"></script>
     <script src="js/index.js" type="module"></script>
   </body>
 </html>
