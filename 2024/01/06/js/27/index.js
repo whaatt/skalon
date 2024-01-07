@@ -264,7 +264,7 @@ const initializeEditor = async () => {
       const target = /** @type {HTMLInputElement} */ (event.target);
       state.activeColor = target.value;
       // Get rid of Copy Mode if a color is selected.
-      if (state.useMask === MaskMode.Color) {
+      if (state.useMask === MaskMode.Copy) {
         state.useMask = false;
       }
       state.editMode = EditMode.Draw;
