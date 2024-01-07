@@ -14,3 +14,7 @@
 .ascii-canvas-cell.highlight-boundary {
   background-color: #aaa;
 }
+
+.ascii-canvas-cell.highlight-paste {
+  background-color: #eee;
+}

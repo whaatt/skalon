@@ -53,12 +53,24 @@
   </head>
   <body>
     <div id="content">
-      <pre id="header">
-~~~~~~~~~~~~~~~~~~~~~~
-# <a href="/">Prev</a>...<a href="/">Home</a>...<a disabled>Next</a> #
-~~~~~~~~~~~~~~~~~~~~~~
-# <span class="title">ascii doodle 0.0.1</span> #
-~~~~~~~~~~~~~~~~~~~~~~</pre>
+      <div id="header">
+        ~~~~~~~~~~~~~~~~~~~~~~
+        <br />
+        # <a href="/2022/01/08">Prev</a>...<a href="/">Home</a>...<a disabled
+          >Next</a
+        >
+        #
+        <br />
+        ~~~~~~~~~~~~~~~~~~~~~~
+        <br />
+        # <span class="title">ascii doodle 0.0.1</span> #
+        <br />
+        ~~~~~~~~~~~~~~~~~~~~~~
+        <br />
+        # >>>> <a href="shortcuts.txt" target="_blank">shortcuts.txt</a> #
+        <br />
+        ~~~~~~~~~~~~~~~~~~~~~~
+      </div>
       <div class="controls">
         <div class="controls-line">
           <input
@@ -82,7 +94,7 @@
               <label for="draw-option-fill">Fill</label>
             </label>
           </div>
-          <label class="draw-option fill-mode" for="draw-option-lasso">
+          <label class="draw-option" for="draw-option-lasso">
             <input
               type="checkbox"
               id="draw-option-lasso"
@@ -99,11 +111,22 @@
                 type="checkbox"
                 id="draw-option-color"
                 name="draw-option-color"
-                class="control-button"
+                data-mask-mode="Color"
+                class="control-button mask-mode"
               />
               <label for="draw-option-color">Recolor</label>
             </label>
           </div>
+          <label class="draw-option" id="copy" for="draw-option-copy">
+            <input
+              type="checkbox"
+              id="draw-option-copy"
+              name="draw-option-copy"
+              data-mask-mode="Copy"
+              class="control-button mask-mode"
+            />
+            <label for="draw-option-copy">Copy</label>
+          </label>
           <div class="navigation-item separator-container">
             <span class="separator">//</span
             ><button
@@ -130,6 +153,18 @@
           >
             ⦸
           </button>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <label class="draw-option" for="draw-option-paste" data-active>
+              <input
+                type="checkbox"
+                id="draw-option-paste"
+                name="draw-option-paste"
+                class="control-button"
+              />
+              <label for="draw-option-paste">Paste</label>
+            </label>
+          </div>
         </div>
       </div>
       <pre id="canvas"></pre>
@@ -150,7 +185,7 @@
               class="control-button edit-mode"
               data-edit-mode="GrabHtml"
             >
-              Grab HTML
+              Export HTML
             </button>
           </div>
           <div class="separator-container">
@@ -160,12 +195,18 @@
               class="control-button edit-mode"
               data-edit-mode="GrabText"
             >
-              Grab Text
+              Export Text
+            </button>
+          </div>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <button type="button" id="import-clip" class="control-button">
+              Import Clip
             </button>
           </div>
         </div>
       </div>
-      <div id="published">3 January 2024</div>
+      <div id="published">6 January 2024</div>
     </div>
     <script src="js/vendor/coloris.min.js"></script>
     <script src="js/vendor/idbkvstore.min.js"></script>

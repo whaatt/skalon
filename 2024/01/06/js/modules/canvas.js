@@ -17,6 +17,7 @@ const CELL_CLASS_NAME = "ascii-canvas-cell";
 const HighlightClass = /** @type {const} */ {
   Selection: "highlight-selection",
   Boundary: "highlight-boundary",
+  Paste: "highlight-paste",
 };
 
 /**
@@ -157,6 +158,30 @@ const getRectanglePoints = (path) => {
 };
 
 /**
+ * Returns the bounding box for the passed path.
+ *
+ * @param {Array<[number, number]>} path
+ * @returns {[[number, number], [number, number]] | null}
+ */
+const getBoundingBox = (path) => {
+  if (path.length < 1) {
+    return null;
+  }
+
+  let [minRow, minColumn] = [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER];
+  let [maxRow, maxColumn] = [0, 0];
+  for (const [row, column] of path) {
+    [minRow, minColumn] = [Math.min(minRow, row), Math.min(minColumn, column)];
+    [maxRow, maxColumn] = [Math.max(maxRow, row), Math.max(maxColumn, column)];
+  }
+
+  return [
+    [minRow, minColumn],
+    [maxRow, maxColumn],
+  ];
+};
+
+/**
  * Computes the points contained within a closed path (including the path
  * itself).
  *
@@ -180,13 +205,15 @@ const getContainedPoints = (rawPath) => {
   );
 
   // Compute the bounding box and path set for the closed loop.
-  let [minRow, minColumn] = [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER];
-  let [maxRow, maxColumn] = [0, 0];
+  const boundingBox = getBoundingBox(path);
+  if (boundingBox === null) {
+    // Not expected:
+    return rawPath;
+  }
+  const [[minRow, minColumn], [maxRow, maxColumn]] = boundingBox;
   /** @type {Record<string, [number, number]>} */
   const pathSet = {};
   for (const [row, column] of path) {
-    [minRow, minColumn] = [Math.min(minRow, row), Math.min(minColumn, column)];
-    [maxRow, maxColumn] = [Math.max(maxRow, row), Math.max(maxColumn, column)];
     pathSet[[row, column].toString()] = [row, column];
   }
 
@@ -322,12 +349,21 @@ const FillMode = /** @type {const} */ ({
   Lasso: "Lasso",
 });
 
+/** @typedef {MaskMode[keyof MaskMode]} MaskModeValue */
+const MaskMode = /** @type {const} */ ({
+  Color: "Color",
+  Copy: "Copy",
+});
+
+// TODO: Encode mutual exclusion between certain fill and mask modes in the type
+// system.
 /** @typedef {{
       editMode: EditModeValue,
       activeCharacter: string,
       activeColor: string,
       useFill: FillModeValue | false,
-      useColor: boolean
+      useMask: MaskModeValue | false,
+      runningPaste: boolean
     }} InteractionState
 */
 
@@ -400,7 +436,11 @@ class AsciiCanvas {
     this.undoStack = [];
     /** @type {Array<[boolean, Array<[number, number, number | null, number | null]>]>} */
     this.redoStack = [];
-    this.flush({ isInitial: true });
+    /** @type {Array<Array<[number, number]>>} */
+    this.pasteArea = [];
+    /** @type {boolean} */
+    this.showingPaste = false;
+    this.flush({ forceSyncOnly: true });
 
     // Handle canvas resizing:
     /** @type {number} */
@@ -459,6 +499,45 @@ class AsciiCanvas {
     const cellId = this.getCellId(row, column);
     const cell = document.getElementById(cellId);
     return cell;
+  }
+
+  /**
+   * Imports the passed string as a paste area for Paste Mode.
+   *
+   * @param {string} text
+   */
+  importPasteArea(text) {
+    const state = this.getInteractionState();
+    const color = hexToRgba(state.activeColor);
+    this.pasteArea = text
+      .split("\n")
+      .map((line) =>
+        line
+          .split("")
+          .map((character) => [
+            ord(character),
+            rgbaToUint32(color.r, color.g, color.b, color.a),
+          ])
+      );
+    const maxLength = this.pasteArea.reduce(
+      (maxLength, current) => Math.max(maxLength, current.length),
+      0
+    );
+    // Pad each line to the max length so the paste area is a rectangle (as the
+    // code is expecting).
+    for (const line of this.pasteArea) {
+      if (line.length < maxLength) {
+        line.push(
+          ...Array.apply(null, Array(maxLength - line.length)).map(
+            () =>
+              /** @type {[number, number]} */ ([
+                ord(" "),
+                rgbaToUint32(color.r, color.g, color.b, color.a),
+              ])
+          )
+        );
+      }
+    }
   }
 
   /**
@@ -638,17 +717,41 @@ class AsciiCanvas {
   }
 
   /**
+   * @param {number} row
+   * @param {number} column
+   * @param {number} value
+   */
+  flushCellValue(row, column, value) {
+    const cell = this.getCell(row, column);
+    if (cell !== null) {
+      cell.innerHTML = chr(value);
+    }
+  }
+
+  /**
+   * @param {number} row
+   * @param {number} column
+   * @param {number} color
+   */
+  flushCellColor(row, column, color) {
+    const cell = this.getCell(row, column);
+    if (cell !== null) {
+      cell.style.color = uint32ToRgbaString(color);
+    }
+  }
+
+  /**
    * Flushes any pending grid or color mutations to the DOM and updates the
    * undo/redo stacks.
    *
    * @optional @param {{
-   *   isInitial?: boolean,
+   *   forceSyncOnly?: boolean,
    *   isUndo?: boolean,
    *   isRedo?: boolean,
    *   isReset?: boolean
    * }} parameter
    */
-  flush({ isInitial, isUndo, isRedo, isReset } = {}) {
+  flush({ forceSyncOnly, isUndo, isRedo, isReset } = {}) {
     /** @type {Array<[number, number, number | null, number | null]>} */
     const inverseOperations = [];
     for (let row = 0; row < this.height; row += 1) {
@@ -658,43 +761,34 @@ class AsciiCanvas {
         const newColor = this.colorScratch[index];
 
         // Queue an inverse operation only for changed cells.
-        if (this.grid[index] !== newValue || this.color[index] !== newColor) {
+        if (
+          this.grid[index] !== newValue ||
+          this.color[index] !== newColor ||
+          forceSyncOnly
+        ) {
           inverseOperations.push([row, column, null, null]);
         }
 
-        /** @type {HTMLElement | null | undefined} */
-        let cell = undefined;
-
         // Update cell value if necessary.
-        if (this.grid[index] !== newValue) {
+        if (this.grid[index] !== newValue || forceSyncOnly) {
           inverseOperations[inverseOperations.length - 1][2] = this.grid[index];
           this.grid[index] = newValue;
-          if (cell === undefined) {
-            cell = this.getCell(row, column);
-          }
-          if (cell !== null) {
-            cell.innerHTML = chr(newValue);
-          }
+          this.flushCellValue(row, column, newValue);
         }
 
         // Update cell color if necessary.
-        if (this.color[index] !== newColor) {
+        if (this.color[index] !== newColor || forceSyncOnly) {
           inverseOperations[inverseOperations.length - 1][3] =
             this.color[index];
           this.color[index] = newColor;
-          if (cell === undefined) {
-            cell = this.getCell(row, column);
-          }
-          if (cell !== null) {
-            cell.style.color = uint32ToRgbaString(newColor);
-          }
+          this.flushCellColor(row, column, newColor);
         }
       }
     }
 
     // Persist grid to storage and update the undo/redo stacks.
     this.storeGridAndColor({ grid: this.grid, color: this.color });
-    if (isInitial) {
+    if (forceSyncOnly) {
       return;
     }
     if (isUndo) {
@@ -782,6 +876,11 @@ class AsciiCanvas {
       }
       const target = /** @type {HTMLElement} */ (event.target);
       target.releasePointerCapture(event.pointerId);
+      // Paste mode special case (don't start a path):
+      const state = this.getInteractionState();
+      if (state.runningPaste && state.editMode === EditMode.Draw) {
+        return;
+      }
       this.pathStarted[event.pointerId] = true;
       this.paths[event.pointerId] = [];
     });
@@ -817,15 +916,33 @@ class AsciiCanvas {
         this.syncEnabledHighlights([], Object.values(HighlightClass));
         const selectionPoints = getRectanglePoints(this.paths[event.pointerId]);
         const color = hexToRgba(state.activeColor);
-        for (const [row, column] of selectionPoints) {
-          this.set(row, column, state.useColor ? null : state.activeCharacter, [
-            color.r,
-            color.g,
-            color.b,
-            color.a,
-          ]);
+        // Create a new paste area for the Copy Mask Mode; otherwise, just
+        // perform a regular set.
+        if (state.useMask === MaskMode.Copy) {
+          this.pasteArea = [];
+          const [start, end] = getRectangleCorners(this.paths[event.pointerId]);
+          for (let row = start[0]; row <= end[0]; row += 1) {
+            this.pasteArea.push([]);
+            for (let column = start[1]; column <= end[1]; column += 1) {
+              const index = this.rowColToIndex(row, column);
+              this.pasteArea[this.pasteArea.length - 1].push([
+                this.grid[index],
+                this.color[index],
+              ]);
+            }
+          }
+          this.onCopied(state.editMode);
+        } else {
+          for (const [row, column] of selectionPoints) {
+            this.set(
+              row,
+              column,
+              state.useMask === MaskMode.Color ? null : state.activeCharacter,
+              [color.r, color.g, color.b, color.a]
+            );
+          }
+          this.flush();
         }
-        this.flush();
       }
       // Contextual Update: Draw Mode + Fill Mode Lasso
       // Action: Un-Highlight Area + Update Area.
@@ -836,15 +953,39 @@ class AsciiCanvas {
         this.syncEnabledHighlights([], Object.values(HighlightClass));
         const areaPoints = getContainedPoints(this.paths[event.pointerId]);
         const color = hexToRgba(state.activeColor);
-        for (const [row, column] of areaPoints) {
-          this.set(row, column, state.useColor ? null : state.activeCharacter, [
-            color.r,
-            color.g,
-            color.b,
-            color.a,
-          ]);
+        // Create a new paste area for the Copy Mask Mode; otherwise, just
+        // perform a regular set. For the lasso paste area, we use the relevant
+        // rectangular bounding box.
+        if (state.useMask === MaskMode.Copy) {
+          this.pasteArea = [];
+          const boundingBox = getBoundingBox(areaPoints);
+          if (boundingBox === null) {
+            // Not expected:
+            return;
+          }
+          const [start, end] = boundingBox;
+          for (let row = start[0]; row <= end[0]; row += 1) {
+            this.pasteArea.push([]);
+            for (let column = start[1]; column <= end[1]; column += 1) {
+              const index = this.rowColToIndex(row, column);
+              this.pasteArea[this.pasteArea.length - 1].push([
+                this.grid[index],
+                this.color[index],
+              ]);
+            }
+          }
+          this.onCopied(state.editMode);
+        } else {
+          for (const [row, column] of areaPoints) {
+            this.set(
+              row,
+              column,
+              state.useMask === MaskMode.Color ? null : state.activeCharacter,
+              [color.r, color.g, color.b, color.a]
+            );
+          }
+          this.flush();
         }
-        this.flush();
       }
       // Contextual Update: Grab HTML Mode
       // Action: Un-Highlight Area + Clip Selection (as HTML).
@@ -901,6 +1042,11 @@ class AsciiCanvas {
         );
         const target = /** @type {HTMLElement} */ (event.target);
         target.releasePointerCapture(event.pointerId);
+        // Paste mode special case (don't handle paths):
+        const state = this.getInteractionState();
+        if (state.runningPaste && state.editMode === EditMode.Draw) {
+          return;
+        }
         this.pathStarted[event.pointerId] = true;
         this.paths[event.pointerId] = [[row, column]];
       });
@@ -911,6 +1057,49 @@ class AsciiCanvas {
         const [row, column] = this.parseCellId(
           /** @type {HTMLSpanElement} */ (event.target).id
         );
+
+        // Paste mode special case:
+        const state = this.getInteractionState();
+        if (state.runningPaste && state.editMode === EditMode.Draw) {
+          // Remove any highlights.
+          this.syncEnabledHighlights([], Object.values(HighlightClass));
+          if (this.pasteArea.length === 0 || this.pasteArea[0].length === 0) {
+            return;
+          }
+          // Sync the grid state and apply mutations directly to the elements.
+          this.flush({ forceSyncOnly: true });
+          const rowBound = Math.min(row + this.pasteArea.length, MAX_WIDTH) - 1;
+          const columnBound =
+            Math.min(column + this.pasteArea[0].length, MAX_HEIGHT) - 1;
+          /** @type {Array<[number, number]>} */
+          const pasteCells = [];
+          for (let pasteRow = row; pasteRow <= rowBound; pasteRow += 1) {
+            for (
+              let pasteColumn = column;
+              pasteColumn <= columnBound;
+              pasteColumn += 1
+            ) {
+              const areaRow = pasteRow - row;
+              const areaColumn = pasteColumn - column;
+              const [value, color] = this.pasteArea[areaRow][areaColumn];
+              this.flushCellValue(pasteRow, pasteColumn, value);
+              this.flushCellColor(pasteRow, pasteColumn, color);
+              pasteCells.push([pasteRow, pasteColumn]);
+            }
+          }
+          this.showingPaste = true;
+          // Add paste highlights.
+          this.syncEnabledHighlights(pasteCells, [HighlightClass.Paste]);
+          return;
+        }
+        // Paste mode over (reset grid state):
+        if (this.showingPaste) {
+          // Remove any highlights.
+          this.syncEnabledHighlights([], Object.values(HighlightClass));
+          // Sync the grid state and apply mutations directly to the elements.
+          this.flush({ forceSyncOnly: true });
+          this.showingPaste = false;
+        }
 
         // Update tracked path (or abort if no pointer is down):
         if (!this.pathStarted[event.pointerId]) {
@@ -938,7 +1127,6 @@ class AsciiCanvas {
         this.paths[event.pointerId].push(...pathHere);
 
         // Run contextual updates:
-        const state = this.getInteractionState();
         // Contextual Update: Draw Mode + No Fill Mode.
         // Action: Highlight Cell + Update Cell.
         if (state.editMode === EditMode.Draw && !state.useFill) {
@@ -951,7 +1139,7 @@ class AsciiCanvas {
             this.set(
               row,
               column,
-              state.useColor ? null : state.activeCharacter,
+              state.useMask === MaskMode.Color ? null : state.activeCharacter,
               [color.r, color.g, color.b, color.a]
             );
           }
@@ -1010,18 +1198,44 @@ class AsciiCanvas {
           /** @type {HTMLSpanElement} */ (event.target).id
         );
 
-        // Run contextual updates:
+        // Paste mode special case:
         const state = this.getInteractionState();
+        if (state.runningPaste && state.editMode === EditMode.Draw) {
+          if (this.pasteArea.length === 0 || this.pasteArea[0].length === 0) {
+            return;
+          }
+          // Re-sync the grid state before we apply the paste.
+          this.flush({ forceSyncOnly: true });
+          const rowBound = Math.min(row + this.pasteArea.length, MAX_WIDTH) - 1;
+          const columnBound =
+            Math.min(column + this.pasteArea[0].length, MAX_HEIGHT) - 1;
+          for (let pasteRow = row; pasteRow <= rowBound; pasteRow += 1) {
+            for (
+              let pasteColumn = column;
+              pasteColumn <= columnBound;
+              pasteColumn += 1
+            ) {
+              const areaRow = pasteRow - row;
+              const areaColumn = pasteColumn - column;
+              const [value, color] = this.pasteArea[areaRow][areaColumn];
+              this.setInternal(pasteRow, pasteColumn, value, color);
+            }
+          }
+          this.flush();
+          return;
+        }
+
+        // Run contextual updates:
         // Contextual Update: Draw Mode + No Fill Mode.
         // Action: Update Cell (edge case for click-only paths).
         if (state.editMode === EditMode.Draw && !state.useFill) {
           const color = hexToRgba(state.activeColor);
-          this.set(row, column, state.useColor ? null : state.activeCharacter, [
-            color.r,
-            color.g,
-            color.b,
-            color.a,
-          ]);
+          this.set(
+            row,
+            column,
+            state.useMask === MaskMode.Color ? null : state.activeCharacter,
+            [color.r, color.g, color.b, color.a]
+          );
           this.flush();
         }
       });
@@ -1029,4 +1243,14 @@ class AsciiCanvas {
   }
 }
 
-export { AsciiCanvas, CHAR_CODE_SPACE, CHAR_SPACE, EditMode, chr, ord };
+export {
+  AsciiCanvas,
+  CHAR_CODE_SPACE,
+  CHAR_SPACE,
+  EditMode,
+  FillMode,
+  HighlightClass,
+  MaskMode,
+  chr,
+  ord,
+};
