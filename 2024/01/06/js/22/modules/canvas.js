@@ -419,7 +419,7 @@ class AsciiCanvas {
     if (gridInitial === null) {
       /** @type {Uint8Array} */
       this.grid = new Uint8Array(MAX_WIDTH * MAX_HEIGHT);
-      this.grid.fill(ord("."));
+      this.grid.fill(CHAR_CODE_SPACE);
     } else {
       this.grid = gridInitial;
     }
@@ -664,7 +664,7 @@ class AsciiCanvas {
    * NOTE: This mutation needs flushing for application.
    */
   reset() {
-    this.gridScratch.fill(ord("."));
+    this.gridScratch.fill(CHAR_CODE_SPACE);
     this.colorScratch.fill(rgbaToUint32(0, 0, 0, 1));
   }
 
