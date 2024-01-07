@@ -198,6 +198,7 @@ const initializeEditor = async () => {
   // @ts-ignore
   Coloris({
     alpha: false,
+    focusInput: false,
     swatches: [
       "#264653",
       "#2a9d8f",
@@ -373,6 +374,10 @@ const initializeEditor = async () => {
     (event) => {
       if (state.runningPaste) {
         state.runningPaste = false;
+        // Immediately hide the paste preview (this kind of feels like poking
+        // through the abstraction, but whatever).
+        canvas.syncEnabledHighlights([], Object.values(HighlightClass));
+        canvas.flush({ forceSyncOnly: true });
       } else {
         state.runningPaste = true;
         state.editMode = EditMode.Draw;
@@ -417,6 +422,7 @@ const initializeEditor = async () => {
     }
   );
 
+  // TODO: De-dupe some of this logic with the input element listeners.
   // Attach a few handy shortcuts. More to be considered:
   window.addEventListener("keydown", (event) => {
     if (event.metaKey === true || event.ctrlKey === true) {

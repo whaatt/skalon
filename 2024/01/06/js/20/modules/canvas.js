@@ -440,7 +440,7 @@ class AsciiCanvas {
     this.undoStack = [];
     /** @type {Array<[boolean, Array<[number, number, number | null, number | null]>]>} */
     this.redoStack = [];
-    /** @type {Array<Array<[number, number]>>} */
+    /** @type {Array<Array<[number, number] | null>>} */
     this.pasteArea = [];
     /** @type {boolean} */
     this.showingPaste = false;
@@ -532,13 +532,7 @@ class AsciiCanvas {
     for (const line of this.pasteArea) {
       if (line.length < maxLength) {
         line.push(
-          ...Array.apply(null, Array(maxLength - line.length)).map(
-            () =>
-              /** @type {[number, number]} */ ([
-                ord(" "),
-                rgbaToUint32(color.r, color.g, color.b, color.a),
-              ])
-          )
+          ...Array.apply(null, Array(maxLength - line.length)).map(() => null)
         );
       }
     }
@@ -958,8 +952,9 @@ class AsciiCanvas {
         const areaPoints = getContainedPoints(this.paths[event.pointerId]);
         const color = hexToRgba(state.activeColor);
         // Create a new paste area for the Copy Mask Mode; otherwise, just
-        // perform a regular set. For the lasso paste area, we use the relevant
-        // rectangular bounding box.
+        // perform a regular set. For the lasso paste area, we use all lasso
+        // points from the relevant rectangular bounding box (and mark unset
+        // points with nulls).
         if (state.useMask === MaskMode.Copy) {
           this.pasteArea = [];
           const boundingBox = getBoundingBox(areaPoints);
@@ -968,14 +963,23 @@ class AsciiCanvas {
             return;
           }
           const [start, end] = boundingBox;
+          /** @type {Record<string, boolean>} */
+          const areaPointSet = {};
+          for (const point of areaPoints) {
+            areaPointSet[point.toString()] = true;
+          }
           for (let row = start[0]; row <= end[0]; row += 1) {
             this.pasteArea.push([]);
             for (let column = start[1]; column <= end[1]; column += 1) {
               const index = this.rowColToIndex(row, column);
-              this.pasteArea[this.pasteArea.length - 1].push([
-                this.grid[index],
-                this.color[index],
-              ]);
+              if ([row, column].toString() in areaPointSet) {
+                this.pasteArea[this.pasteArea.length - 1].push([
+                  this.grid[index],
+                  this.color[index],
+                ]);
+              } else {
+                this.pasteArea[this.pasteArea.length - 1].push(null);
+              }
             }
           }
           this.onCopied(state.editMode);
@@ -1092,9 +1096,12 @@ class AsciiCanvas {
             ) {
               const areaRow = pasteRow - row;
               const areaColumn = pasteColumn - column;
-              const [value, color] = this.pasteArea[areaRow][areaColumn];
-              this.flushCellValue(pasteRow, pasteColumn, value);
-              this.flushCellColor(pasteRow, pasteColumn, color);
+              const pointSpec = this.pasteArea[areaRow][areaColumn];
+              if (pointSpec !== null) {
+                const [value, color] = pointSpec;
+                this.flushCellValue(pasteRow, pasteColumn, value);
+                this.flushCellColor(pasteRow, pasteColumn, color);
+              }
               pasteCells.push([pasteRow, pasteColumn]);
             }
           }
@@ -1228,8 +1235,11 @@ class AsciiCanvas {
             ) {
               const areaRow = pasteRow - row;
               const areaColumn = pasteColumn - column;
-              const [value, color] = this.pasteArea[areaRow][areaColumn];
-              this.setInternal(pasteRow, pasteColumn, value, color);
+              const pointSpec = this.pasteArea[areaRow][areaColumn];
+              if (pointSpec !== null) {
+                const [value, color] = pointSpec;
+                this.setInternal(pasteRow, pasteColumn, value, color);
+              }
             }
           }
           this.flush();
