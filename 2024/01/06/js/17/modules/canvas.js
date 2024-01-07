@@ -1,5 +1,5 @@
 // @ts-check
-import { hexToRgba } from "../vendor/hex-to-rgba.js";
+import { hexToRgba } from "../../vendor/hex-to-rgba.js";
 
 const CHAR_SPACE = " ";
 const CHAR_CODE_SPACE = CHAR_SPACE.charCodeAt(0);
@@ -373,6 +373,7 @@ const MaskMode = /** @type {const} */ ({
       colorInitial: Uint32Array | null,
       getInteractionState: () => InteractionState,
       storeGridAndColor: (value: {grid: Uint8Array, color: Uint32Array}) => Promise<void>,
+      runCopyFallback: (clipboardItem: ClipboardItem) => void
       onCopied: (editMode: EditModeValue) => void
       onNavigated: () => void
     }} AsciiCanvasParameters
@@ -389,6 +390,7 @@ class AsciiCanvas {
     colorInitial,
     getInteractionState,
     storeGridAndColor,
+    runCopyFallback,
     onCopied,
     onNavigated,
   }) {
@@ -407,6 +409,8 @@ class AsciiCanvas {
     this.getInteractionState = getInteractionState;
     /** @type {typeof storeGridAndColor} */
     this.storeGridAndColor = storeGridAndColor;
+    /** @type {typeof runCopyFallback} */
+    this.runCopyFallback = runCopyFallback;
     /** @type {typeof onCopied} */
     this.onCopied = onCopied;
     /** @type {typeof onNavigated} */
@@ -994,13 +998,15 @@ class AsciiCanvas {
         const markup = this.renderRangeToMarkup(
           getRectangleCorners(this.paths[event.pointerId])
         );
+        const blobText = new Blob([markup], { type: "text/plain" });
+        const blobHtml = new Blob([markup], { type: "text/html" });
+        const item = new ClipboardItem({
+          "text/plain": Promise.resolve(blobText),
+          "text/html": Promise.resolve(blobHtml),
+        });
         navigator.clipboard
-          .write([
-            new ClipboardItem({
-              "text/plain": new Blob([markup], { type: "text/plain" }),
-              "text/html": new Blob([markup], { type: "text/html" }),
-            }),
-          ])
+          .write([item])
+          .catch(() => this.runCopyFallback(item))
           .then(() => this.onCopied(state.editMode));
       }
       // Contextual Update: Grab Text Mode
@@ -1010,8 +1016,13 @@ class AsciiCanvas {
         const text = this.renderRangeToRawText(
           getRectangleCorners(this.paths[event.pointerId])
         );
+        const blobText = new Blob([text], { type: "text/plain" });
+        const item = new ClipboardItem({
+          "text/plain": Promise.resolve(blobText),
+        });
         navigator.clipboard
-          .writeText(text)
+          .write([item])
+          .catch(() => this.runCopyFallback(item))
           .then(() => this.onCopied(state.editMode));
       }
 

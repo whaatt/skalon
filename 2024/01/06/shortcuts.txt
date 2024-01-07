@@ -14,3 +14,5 @@ Keyboard shortcuts (replace [CMD] with [CTRL] on Windows):
 Tip: After importing your clipboard, you must use Paste Mode to actually apply
      the text to the grid (while holding [CMD + V] or checking the Paste Mode
      box manually, move your cursor around to preview the paste).
+
+Tip: Clipboard support may be wonky on iOS.

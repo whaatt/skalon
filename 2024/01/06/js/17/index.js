@@ -27,9 +27,11 @@ const DATA_ATTRIBUTE_MASK_MODE = "data-mask-mode";
 const ELEMENT_ID_CANVAS = "canvas";
 const ELEMENT_ID_CHARACTER_PICKER = "character-picker";
 const ELEMENT_ID_COLOR_PICKER = "color-picker";
+const ELEMENT_ID_CONFIRM_COPY = "confirm-copy";
 const ELEMENT_ID_COPY = "copy";
 const ELEMENT_ID_DRAW_OPTION_PASTE = "draw-option-paste";
 const ELEMENT_ID_IMPORT_CLIP = "import-clip";
+const ELEMENT_ID_MODAL_COPY = "modal-copy";
 const ELEMENT_ID_REDO = "redo";
 const ELEMENT_ID_RESET_CANVAS = "reset-canvas";
 const ELEMENT_ID_UNDO = "undo";
@@ -292,6 +294,19 @@ const initializeEditor = async () => {
     colorInitial: color,
     getInteractionState: () => state,
     storeGridAndColor,
+    runCopyFallback: (clipboardItem) => {
+      document.getElementById(ELEMENT_ID_CONFIRM_COPY)?.addEventListener(
+        "click",
+        () => {
+          navigator.clipboard.write([clipboardItem]);
+          // @ts-ignore
+          MicroModal.close(ELEMENT_ID_MODAL_COPY);
+        },
+        { once: true }
+      );
+      // @ts-ignore
+      MicroModal.show(ELEMENT_ID_MODAL_COPY);
+    },
     onCopied: (editMode) => {
       const element = /** @type {HTMLElement | null} */ (
         editMode === EditMode.Draw

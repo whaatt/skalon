@@ -22,6 +22,7 @@ body {
   -webkit-user-select: none;
   width: 100%;
   height: 100%;
+  touch-action: none;
   user-select: none;
 }
 
@@ -79,6 +80,10 @@ pre {
   font-size: 70%;
 }
 
+.controls #disclaimer {
+  margin-bottom: 1em;
+}
+
 .controls.controls-bottom {
   margin-top: 1em;
   margin-bottom: 0;
@@ -86,17 +91,30 @@ pre {
 }
 
 .controls .controls-line {
+  /* -ms-overflow-style: none; */
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
   max-height: 2em;
   overflow: hidden;
+  /* overflow-x: scroll;
+  overflow-y: hidden;
+  scrollbar-width: none; */
 }
 
+/* .controls .controls-line::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+} */
+
 .controls .controls-line:not(:first-child) {
-  margin-top: 0.2em;
+  margin-top: 1em;
 }
+
+/* .controls .controls-line > * {
+  flex-shrink: 0;
+} */
 
 .controls .controls-line > :not(:first-child):not(.separator-container) {
   margin-left: 0.25em;
@@ -210,6 +228,10 @@ pre {
   margin-left: 0.5em;
 }
 
+.controls input[type="checkbox"] {
+  font-size: 75%;
+}
+
 #reset-canvas {
   color: red;
 }
@@ -229,4 +251,49 @@ pre {
 
 #published {
   display: none;
+}
+
+.modal {
+  display: none;
+  font-family: "Modernist Mono", monospace;
+}
+
+.modal.is-open {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-width: 320px;
+  height: 100%;
+}
+
+.modal .modal-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  background-color: rgba(0, 0, 0, 0.4);
+  width: 100%;
+  height: 100%;
+}
+
+.modal .modal-overlay .modal-content {
+  display: flex;
+  border-radius: 4px;
+  background: white;
+}
+
+.modal .modal-overlay .modal-content .controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  padding: 2em;
+}
+
+#confirm-copy {
+  border-color: green;
+  color: green;
 }

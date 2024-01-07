@@ -48,8 +48,8 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/vendor/coloris.min.css" />
-    <link rel="stylesheet" href="css/canvas.css" />
-    <link rel="stylesheet" href="css/index.css" />
+    <link rel="stylesheet" href="css/2/canvas.css" />
+    <link rel="stylesheet" href="css/2/index.css" />
   </head>
   <body>
     <div id="content">
@@ -67,11 +67,15 @@
         <br />
         ~~~~~~~~~~~~~~~~~~~~~~
         <br />
-        # >>>> <a href="shortcuts.txt" target="_blank">shortcuts.txt</a> #
+        # >>>>
+        <a href="shortcuts.txt?version=1" target="_blank">shortcuts.txt</a> #
         <br />
         ~~~~~~~~~~~~~~~~~~~~~~
       </div>
       <div class="controls">
+        <div id="disclaimer">
+          Best viewed on desktop or wider screen for the full set of controls!
+        </div>
         <div class="controls-line">
           <input
             id="character-picker"
@@ -81,6 +85,32 @@
             maxlength="1"
           />
           <input id="color-picker" type="text" data-coloris value="#000000" />
+          <div class="navigation-item separator-container">
+            <span class="separator">//</span
+            ><button
+              type="button"
+              id="undo"
+              class="control-button hide-narrow"
+              disabled
+            >
+              ←
+            </button>
+          </div>
+          <button
+            type="button"
+            id="redo"
+            class="navigation-item control-button"
+            disabled
+          >
+            →
+          </button>
+          <button
+            type="button"
+            id="reset-canvas"
+            class="navigation-item control-button"
+          >
+            ⦸
+          </button>
           <div class="separator-container">
             <span class="separator">//</span>
             <label class="draw-option" for="draw-option-fill">
@@ -127,32 +157,6 @@
             />
             <label for="draw-option-copy">Copy</label>
           </label>
-          <div class="navigation-item separator-container">
-            <span class="separator">//</span
-            ><button
-              type="button"
-              id="undo"
-              class="control-button hide-narrow"
-              disabled
-            >
-              ←
-            </button>
-          </div>
-          <button
-            type="button"
-            id="redo"
-            class="navigation-item control-button"
-            disabled
-          >
-            →
-          </button>
-          <button
-            type="button"
-            id="reset-canvas"
-            class="navigation-item control-button"
-          >
-            ⦸
-          </button>
           <div class="separator-container">
             <span class="separator">//</span>
             <label class="draw-option" for="draw-option-paste" data-active>
@@ -208,8 +212,32 @@
       </div>
       <div id="published">6 January 2024</div>
     </div>
+    <div id="modal-copy" class="modal" aria-hidden="true">
+      <div class="modal-overlay" tabindex="-1" data-micromodal-close>
+        <div class="modal-content" role="dialog" aria-modal="true">
+          <div class="controls">
+            <button
+              aria-label="Close Modal"
+              class="controls-line control-button"
+              data-micromodal-close
+            >
+              Discard Selection
+            </button>
+            <button
+              id="confirm-copy"
+              aria-label="Confirm Copy"
+              type="button"
+              class="controls-line control-button"
+            >
+              Grab To Clipboard
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
     <script src="js/vendor/coloris.min.js"></script>
     <script src="js/vendor/idbkvstore.min.js"></script>
-    <script src="js/index.js" type="module"></script>
+    <script src="js/vendor/micromodal.min.js"></script>
+    <script src="js/17/index.js" type="module"></script>
   </body>
 </html>
