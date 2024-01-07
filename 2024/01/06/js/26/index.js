@@ -228,6 +228,10 @@ const initializeEditor = async () => {
       } else {
         state.activeCharacter = target.value;
       }
+      // Get rid of mask mode if a character is selected.
+      if (state.useMask !== false) {
+        state.useMask = false;
+      }
       state.editMode = EditMode.Draw;
       target.blur();
     }
@@ -246,6 +250,10 @@ const initializeEditor = async () => {
         state.activeCharacter = lastCharacter;
         state.useErase = false;
       }
+      // Get rid of mask mode if a character is selected.
+      if (state.useMask !== false) {
+        state.useMask = false;
+      }
       state.editMode = EditMode.Draw;
     }
   );
@@ -255,6 +263,10 @@ const initializeEditor = async () => {
     (event) => {
       const target = /** @type {HTMLInputElement} */ (event.target);
       state.activeColor = target.value;
+      // Get rid of Copy Mode if a color is selected.
+      if (state.useMask === MaskMode.Color) {
+        state.useMask = false;
+      }
       state.editMode = EditMode.Draw;
     }
   );
