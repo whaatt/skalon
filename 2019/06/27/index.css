@@ -17,7 +17,7 @@ a[disabled] {
 
 #content {
   position: relative;
-  background-image: url("/img/PP.png");
+  background-image: url("PP.png");
   background-size: 150px;
   background-repeat: repeat;
   width: 100%;

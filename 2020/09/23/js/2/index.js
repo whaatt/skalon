@@ -373,7 +373,8 @@ const selectCustomSongFile = async (event) => {
           SELECT_CUSTOM_MIDI_FILE_ERROR
         ) === -1
       ) {
-        CUSTOM_SONG_BUTTON_ERROR_TEXT.innerHTML += SELECT_CUSTOM_MIDI_FILE_ERROR;
+        CUSTOM_SONG_BUTTON_ERROR_TEXT.innerHTML +=
+          SELECT_CUSTOM_MIDI_FILE_ERROR;
       }
       return;
     }
