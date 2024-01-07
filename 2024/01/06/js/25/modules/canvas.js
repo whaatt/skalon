@@ -363,6 +363,7 @@ const MaskMode = /** @type {const} */ ({
       activeColor: string,
       useFill: FillModeValue | false,
       useMask: MaskModeValue | false,
+      useErase: boolean,
       runningPaste: boolean
     }} InteractionState
 */

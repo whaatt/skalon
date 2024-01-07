@@ -30,6 +30,7 @@ const ELEMENT_ID_COLOR_PICKER = "color-picker";
 const ELEMENT_ID_CONFIRM_COPY = "confirm-copy";
 const ELEMENT_ID_COPY = "copy";
 const ELEMENT_ID_DRAW_OPTION_PASTE = "draw-option-paste";
+const ELEMENT_ID_DRAW_OPTION_ERASE = "draw-option-erase";
 const ELEMENT_ID_IMPORT_CLIP = "import-clip";
 const ELEMENT_ID_MODAL_COPY = "modal-copy";
 const ELEMENT_ID_REDO = "redo";
@@ -80,6 +81,7 @@ const stateInternal = {
   activeColor: "#000000",
   useFill: false,
   useMask: false,
+  useErase: false,
   runningPaste: false,
 };
 /**
@@ -143,6 +145,9 @@ const syncState = () => {
   document
     .getElementById(ELEMENT_ID_COLOR_PICKER)
     ?.dispatchEvent(new Event("input", { bubbles: true }));
+  /** @type {HTMLInputElement} */
+  (document.getElementById(ELEMENT_ID_DRAW_OPTION_ERASE)).checked =
+    state.useErase;
 
   // Update mask mode selectors:
   const maskModeElements = document
@@ -168,15 +173,13 @@ const syncState = () => {
   /** @type {HTMLInputElement} */
   (document.getElementById(ELEMENT_ID_DRAW_OPTION_PASTE)).checked =
     state.runningPaste;
-  const editModeElements = document
-    .querySelectorAll(`.${CLASS_NAME_EDIT_MODE}`)
-    .forEach((element) => {
-      if (element.getAttribute(DATA_ATTRIBUTE_EDIT_MODE) === state.editMode) {
-        element.setAttribute("data-active", "true");
-      } else {
-        element.removeAttribute("data-active");
-      }
-    });
+  document.querySelectorAll(`.${CLASS_NAME_EDIT_MODE}`).forEach((element) => {
+    if (element.getAttribute(DATA_ATTRIBUTE_EDIT_MODE) === state.editMode) {
+      element.setAttribute(DATA_ATTRIBUTE_ACTIVE, "true");
+    } else {
+      element.removeAttribute(DATA_ATTRIBUTE_ACTIVE);
+    }
+  });
   document
     .querySelectorAll(
       `input[type="checkbox"]:not(#${ELEMENT_ID_DRAW_OPTION_PASTE})`
@@ -222,12 +225,28 @@ const initializeEditor = async () => {
       if (code === CHAR_CODE_SPACE) {
         event.preventDefault();
         state.activeCharacter = CHAR_SPACE;
-        target.value = "";
       } else {
         state.activeCharacter = target.value;
       }
       state.editMode = EditMode.Draw;
       target.blur();
+    }
+  );
+  /** @type {string} */
+  let lastCharacter = state.activeCharacter;
+  /** @type {HTMLInputElement} */
+  (document.getElementById(ELEMENT_ID_DRAW_OPTION_ERASE)).addEventListener(
+    "click",
+    () => /** @type {HTMLInputElement} */ {
+      if (!state.useErase) {
+        state.useErase = true;
+        lastCharacter = state.activeCharacter;
+        state.activeCharacter = CHAR_SPACE;
+      } else {
+        state.activeCharacter = lastCharacter;
+        state.useErase = false;
+      }
+      state.editMode = EditMode.Draw;
     }
   );
   /** @type {HTMLInputElement} */
@@ -274,11 +293,6 @@ const initializeEditor = async () => {
       if (newEditMode !== null) {
         state.editMode = newEditMode;
       }
-      editModeElements.forEach((otherElement) => {
-        if (otherElement !== element) {
-          otherElement.removeAttribute(DATA_ATTRIBUTE_ACTIVE);
-        }
-      });
     });
   });
 
