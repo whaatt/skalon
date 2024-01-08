@@ -28,9 +28,6 @@ const HighlightClass = /** @type {const} */ {
  * @returns {number}
  */
 const ord = (character) => {
-  if (character.length !== 1) {
-    return CHAR_CODE_SPACE;
-  }
   const code = character.codePointAt(0) || 0;
   if (code >= 32 && code <= 127) {
     return code;
