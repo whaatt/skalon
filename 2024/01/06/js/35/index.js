@@ -13,6 +13,7 @@ import {
   FillMode,
   HighlightClass,
   MaskMode,
+  chr,
   ord,
 } from "./modules/canvas.js";
 
@@ -43,7 +44,7 @@ const STORAGE_KEY_COLOR_DATA = "colorData";
 // @ts-ignore
 const keyValueStorage = new IdbKvStore("canvas-storage");
 const loadGridAndColor = async () => {
-  /** @type {Uint8Array | null} */
+  /** @type {Uint32Array | null} */
   let grid = null;
   try {
     grid = (await keyValueStorage.get(STORAGE_KEY_GRID_DATA)) || null;
@@ -59,7 +60,7 @@ const loadGridAndColor = async () => {
   }
   return { grid, color };
 };
-/** @type {(value: {grid: Uint8Array, color: Uint32Array}) => Promise<void>} */
+/** @type {(value: {grid: Uint32Array, color: Uint32Array}) => Promise<void>} */
 const storeGridAndColor = async (value) => {
   try {
     await keyValueStorage.set(STORAGE_KEY_GRID_DATA, value.grid);
@@ -150,15 +151,13 @@ const syncState = () => {
     state.useErase;
 
   // Update mask mode selectors:
-  const maskModeElements = document
-    .querySelectorAll(`.${CLASS_NAME_MASK_MODE}`)
-    .forEach((element) => {
-      if (element.getAttribute(DATA_ATTRIBUTE_MASK_MODE) === state.useMask) {
-        /** @type {HTMLInputElement} */ (element).checked = true;
-      } else {
-        /** @type {HTMLInputElement} */ (element).checked = false;
-      }
-    });
+  document.querySelectorAll(`.${CLASS_NAME_MASK_MODE}`).forEach((element) => {
+    if (element.getAttribute(DATA_ATTRIBUTE_MASK_MODE) === state.useMask) {
+      /** @type {HTMLInputElement} */ (element).checked = true;
+    } else {
+      /** @type {HTMLInputElement} */ (element).checked = false;
+    }
+  });
 
   // Update fill mode selectors:
   document.querySelectorAll(`.${CLASS_NAME_FILL_MODE}`).forEach((element) => {
@@ -216,9 +215,38 @@ const initializeEditor = async () => {
     "click",
     (event) => /** @type {HTMLInputElement} */ (event.target).select()
   );
+  // Make sure no more than one code point is ever visible (we could also do
+  // this with `maxlength` but that does not extend to supporting Unicode if we
+  // ever wanted to do that).
+  // The change event will actually propagate the final code point to the editor
+  // state.
   /** @type {HTMLInputElement} */
   (document.getElementById(ELEMENT_ID_CHARACTER_PICKER))?.addEventListener(
-    "keyup",
+    "paste",
+    (event) => {
+      const target = /** @type {HTMLInputElement} */ (event.target);
+      const code = ord(event.clipboardData?.getData("text/plain") || "");
+      target.value = chr(code);
+      target.blur();
+      // For some reason, the blur stops the natural change event from firing.
+      target.dispatchEvent(new Event("change"));
+    }
+  );
+  /** @type {HTMLInputElement} */
+  (document.getElementById(ELEMENT_ID_CHARACTER_PICKER))?.addEventListener(
+    "keypress",
+    (event) => {
+      const target = /** @type {HTMLInputElement} */ (event.target);
+      const code = ord(event.key);
+      target.value = chr(code);
+      target.blur();
+      // For some reason, the blur stops the natural change event from firing.
+      target.dispatchEvent(new Event("change"));
+    }
+  );
+  /** @type {HTMLInputElement} */
+  (document.getElementById(ELEMENT_ID_CHARACTER_PICKER))?.addEventListener(
+    "change",
     (event) => {
       const target = /** @type {HTMLInputElement} */ (event.target);
       const code = ord(target.value);
@@ -226,7 +254,7 @@ const initializeEditor = async () => {
         event.preventDefault();
         state.activeCharacter = CHAR_SPACE;
       } else {
-        state.activeCharacter = target.value;
+        state.activeCharacter = chr(code);
       }
       // Get rid of mask mode if a character is selected.
       if (state.useMask !== false) {
@@ -397,7 +425,7 @@ const initializeEditor = async () => {
   /** @type {HTMLInputElement} */
   (document.getElementById(ELEMENT_ID_DRAW_OPTION_PASTE)).addEventListener(
     "click",
-    (event) => {
+    () => {
       if (state.runningPaste) {
         state.runningPaste = false;
         // Immediately hide the paste preview (this kind of feels like poking
@@ -451,6 +479,9 @@ const initializeEditor = async () => {
   // TODO: De-dupe some of this logic with the input element listeners.
   // Attach a few handy shortcuts. More to be considered:
   window.addEventListener("keydown", (event) => {
+    if (event.target === document.getElementById(ELEMENT_ID_CHARACTER_PICKER)) {
+      return;
+    }
     if (event.metaKey === true || event.ctrlKey === true) {
       // Windows Redo:
       if (event.key === "y") {
@@ -527,7 +558,7 @@ const initializeEditor = async () => {
       }
     } else {
       // Easy character change:
-      const code = event.key.charCodeAt(0);
+      const code = event.key.codePointAt(0) || 0;
       if (event.key.length === 1 && code >= 32 && code <= 127) {
         state.activeCharacter = event.key;
         event.preventDefault();
@@ -535,6 +566,9 @@ const initializeEditor = async () => {
     }
   });
   window.addEventListener("keyup", (event) => {
+    if (event.target === document.getElementById(ELEMENT_ID_CHARACTER_PICKER)) {
+      return;
+    }
     if (
       state.runningPaste &&
       (event.key === "v" || (!event.metaKey && !event.ctrlKey))

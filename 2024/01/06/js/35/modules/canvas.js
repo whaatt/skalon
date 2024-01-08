@@ -31,7 +31,7 @@ const ord = (character) => {
   if (character.length !== 1) {
     return CHAR_CODE_SPACE;
   }
-  const code = character.charCodeAt(0);
+  const code = character.codePointAt(0) || 0;
   if (code >= 32 && code <= 127) {
     return code;
   }
@@ -47,7 +47,7 @@ const ord = (character) => {
  */
 const chr = (code) => {
   if (code >= 32 && code <= 127) {
-    return String.fromCharCode(code);
+    return String.fromCodePoint(code);
   }
   return CHAR_SPACE;
 };
@@ -322,9 +322,9 @@ const fitCharacterDimensions = (element) => {
     elementHeight - (elementHeight % characterHeight) + borderWidth + "px";
   element.style.minHeight =
     elementHeight - (elementHeight % characterHeight) + borderWidth + "px";
-  console.log(
-    `Computed grid size: ${Math.floor(width)} by ${Math.floor(height)}`
-  );
+  // console.log(
+  //   `Computed grid size: ${Math.floor(width)} by ${Math.floor(height)}`
+  // );
   return [Math.floor(width), Math.floor(height)];
 };
 
@@ -370,10 +370,10 @@ const MaskMode = /** @type {const} */ ({
 
 /** @typedef {{
       element: HTMLPreElement,
-      gridInitial: Uint8Array | null,
+      gridInitial: Uint32Array | null,
       colorInitial: Uint32Array | null,
       getInteractionState: () => InteractionState,
-      storeGridAndColor: (value: {grid: Uint8Array, color: Uint32Array}) => Promise<void>,
+      storeGridAndColor: (value: {grid: Uint32Array, color: Uint32Array}) => Promise<void>,
       runCopyFallback: (clipboardItem: ClipboardItem) => void
       onCopied: (editMode: EditModeValue) => void
       onNavigated: () => void
@@ -418,8 +418,8 @@ class AsciiCanvas {
     this.onNavigated = onNavigated;
 
     if (gridInitial === null) {
-      /** @type {Uint8Array} */
-      this.grid = new Uint8Array(MAX_WIDTH * MAX_HEIGHT);
+      /** @type {Uint32Array} */
+      this.grid = new Uint32Array(MAX_WIDTH * MAX_HEIGHT);
       this.grid.fill(CHAR_CODE_SPACE);
     } else {
       this.grid = gridInitial;
@@ -433,8 +433,8 @@ class AsciiCanvas {
     }
     this.renderGridInternal();
 
-    /** @type {Uint8Array} */
-    this.gridScratch = new Uint8Array(this.grid);
+    /** @type {Uint32Array} */
+    this.gridScratch = new Uint32Array(this.grid);
     /** @type {Uint32Array} */
     this.colorScratch = new Uint32Array(this.color);
     /** @type {Array<[boolean, Array<[number, number, number | null, number | null]>]>} */
