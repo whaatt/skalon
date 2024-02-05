@@ -8,7 +8,8 @@
 
 .ascii-canvas-cell.highlight-selection {
   background-color: #000;
-  color: white !important;
+  /* Legacy styling. */
+  /* color: white !important; */
 }
 
 .ascii-canvas-cell.highlight-boundary {

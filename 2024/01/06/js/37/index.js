@@ -530,8 +530,8 @@ const initializeEditor = async () => {
           event.preventDefault();
         }
       }
-      // Fill Mode:
-      else if (event.key === "f" && event.shiftKey === true) {
+      // Rect (Fill) Mode:
+      else if (event.key === "r" && event.shiftKey === true) {
         if (state.useFill === FillMode.Fill) {
           state.useFill = false;
         } else {
@@ -546,6 +546,16 @@ const initializeEditor = async () => {
           state.useFill = false;
         } else {
           state.useFill = FillMode.Lasso;
+          state.editMode = EditMode.Draw;
+        }
+        event.preventDefault();
+      }
+      // Bucket Mode:
+      else if (event.key === "b" && event.shiftKey === true) {
+        if (state.useFill === FillMode.Bucket) {
+          state.useFill = false;
+        } else {
+          state.useFill = FillMode.Bucket;
           state.editMode = EditMode.Draw;
         }
         event.preventDefault();

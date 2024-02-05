@@ -27,7 +27,7 @@
         "@context": "https://schema.org",
         "@type": "BlogPosting",
         "datePublished": "2024-01-06T00:00:00Z",
-        "dateModified": "2024-01-07T00:00:00Z"
+        "dateModified": "2024-02-04T00:00:00Z"
       }
     </script>
 
@@ -59,8 +59,8 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/vendor/coloris.min.css" />
-    <link rel="stylesheet" href="css/canvas.css?version=4" />
-    <link rel="stylesheet" href="css/index.css?version=4" />
+    <link rel="stylesheet" href="css/canvas.css?version=5" />
+    <link rel="stylesheet" href="css/index.css?version=5" />
   </head>
   <body>
     <div id="content">
@@ -143,7 +143,7 @@
                 data-fill-mode="Fill"
                 class="control-button fill-mode"
               />
-              <label for="draw-option-fill">Fill</label>
+              <label for="draw-option-fill">Rect</label>
             </label>
           </div>
           <label class="draw-option" for="draw-option-lasso">
@@ -155,6 +155,16 @@
               class="control-button fill-mode"
             />
             <label for="draw-option-lasso">Lasso</label>
+          </label>
+          <label class="draw-option" for="draw-option-bucket">
+            <input
+              type="checkbox"
+              id="draw-option-bucket"
+              name="draw-option-bucket"
+              data-fill-mode="Bucket"
+              class="control-button fill-mode"
+            />
+            <label for="draw-option-bucket">🪣</label>
           </label>
           <div class="separator-container">
             <span class="separator">//</span>
@@ -260,6 +270,6 @@
     <script src="js/vendor/coloris.min.js"></script>
     <script src="js/vendor/idbkvstore.min.js"></script>
     <script src="js/vendor/micromodal.min.js"></script>
-    <script src="js/36/index.js" type="module"></script>
+    <script src="js/37/index.js" type="module"></script>
   </body>
 </html>

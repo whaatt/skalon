@@ -4,10 +4,11 @@ Keyboard shortcuts (replace [CMD] with [CTRL] on Windows):
         [CMD + X]:  Clear canvas
         [CMD + Y]:  Redo
         [CMD + Z]:  Undo
+[CMD + Shift + B]:  Set Bucket Mode (flood fill)
 [CMD + Shift + C]:  Set Copy Mask Mode (only for Paste Mode; not for clipboard)
 [CMD + Shift + D]:  Set Draw Mode
 [CMD + Shift + E]:  Set Recolor Mask (only changes cell colors)
-[CMD + Shift + F]:  Set Fill Mode (rectangular fill)
+[CMD + Shift + R]:  Set Rect Mode (rectangular fill)
 [CMD + Shift + S]:  Set Lasso Mode (free-hand fill)
 [CMD + Shift + Z]:  Redo
 
