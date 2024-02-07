@@ -84,6 +84,7 @@ const stateInternal = {
   useMask: false,
   useErase: false,
   runningPaste: false,
+  useDiagonalsForBucketFill: false,
 };
 /**
  * Loads initial internal state from local storage.
@@ -482,6 +483,7 @@ const initializeEditor = async () => {
     if (event.target === document.getElementById(ELEMENT_ID_CHARACTER_PICKER)) {
       return;
     }
+    state.useDiagonalsForBucketFill = event.shiftKey;
     if (event.metaKey === true || event.ctrlKey === true) {
       // Windows Redo:
       if (event.key === "y") {
@@ -579,6 +581,7 @@ const initializeEditor = async () => {
     if (event.target === document.getElementById(ELEMENT_ID_CHARACTER_PICKER)) {
       return;
     }
+    state.useDiagonalsForBucketFill = event.shiftKey;
     if (
       state.runningPaste &&
       (event.key === "v" || (!event.metaKey && !event.ctrlKey))
