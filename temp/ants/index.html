@@ -16,15 +16,15 @@
     </script>
 
     <!-- Page Info -->
-    <title>click</title>
+    <title>ants</title>
     <link rel="canonical" href="https://skalon.com/temp/click/" />
-    <meta name="description" content="temp page for click demo" />
+    <meta name="description" content="temp page for ant puzzle simulator" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "BlogPosting",
-        "datePublished": "2024-02-20T00:00:00Z",
-        "dateModified": "2024-02-20T00:00:00Z"
+        "datePublished": "2024-02-21T00:00:00Z",
+        "dateModified": "2024-02-21T00:00:00Z"
       }
     </script>
 
@@ -51,46 +51,41 @@
     <link rel="stylesheet" href="/css/vendor/normalize.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="index.css?version=2" />
-
-    <!-- Scripts -->
-    <script src="//unpkg.com/tone"></script>
+    <link rel="stylesheet" href="index.css" />
   </head>
   <body>
-    <div id="click-area"></div>
+    <div class="collisions-label">
+      Collisions: <span id="value-collisions">0</span>
+    </div>
+    <canvas id="ants-area" width="1024" height="64"></canvas>
     <div class="slider-label">
-      Pan Range: [<span id="value-min-pan">-1</span>,
-      <span id="value-max-pan">1</span>]
+      Left Ants: <span id="value-left-ants">7</span>
     </div>
     <div class="slider-container">
       <input
         type="range"
         min="0"
-        max="1"
-        value="0"
-        step="0.01"
+        max="10"
+        step="1"
+        value="7"
         class="slider"
-        id="pan-width"
+        id="slider-left-ants"
       />
     </div>
     <div class="slider-label">
-      Low-Pass Cutoff: <span id="value-low-pass">20000</span> Hz
+      Right Ants: <span id="value-right-ants">3</span>
     </div>
     <div class="slider-container">
       <input
         type="range"
-        min="100"
-        max="20000"
-        step="100"
-        value="20000"
+        min="0"
+        max="10"
+        step="1"
+        value="3"
         class="slider"
-        id="low-pass"
+        id="slider-right-ants"
       />
     </div>
-    <label class="custom-file-upload">
-      <input id="file-input" type="file" />
-      <div id="file-input-label">Use Custom Sound</div>
-    </label>
     <script src="index.js"></script>
   </body>
 </html>

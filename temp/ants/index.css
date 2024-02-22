@@ -1,13 +1,12 @@
-#click-area {
-  cursor: crosshair;
+#ants-area {
   margin: 20px;
+  margin-bottom: 0;
   border: 1px solid black;
-  background: #dee;
-  width: 300px;
-  min-width: 300px;
-  min-height: 200px;
-  overflow: auto;
-  resize: both;
+}
+
+.collisions-label {
+  margin: 20px;
+  margin-bottom: 0;
 }
 
 .slider-label {
@@ -19,7 +18,7 @@
   margin: 20px;
   margin-top: 0;
   border: 1px solid black;
-  width: 300px;
+  width: 600px;
   height: 25px;
 }
 
@@ -31,7 +30,7 @@
   transition: opacity 0.2s;
   outline: none;
   background: #d3d3d3;
-  width: 300px;
+  width: 600px;
   height: 25px;
 }
 
@@ -55,17 +54,4 @@
   background: #04aa6d;
   width: 25px;
   height: 25px;
-}
-
-input[type="file"] {
-  display: none;
-}
-
-.custom-file-upload {
-  display: inline-block;
-  cursor: pointer;
-  margin: 20px;
-  margin-top: 0;
-  border: 1px solid #ccc;
-  padding: 6px 12px;
 }
