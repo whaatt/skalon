@@ -303,7 +303,6 @@ const startVideo = async () => {
   await sleep(50);
 
   // Prompt for webcam input.
-  // These calls to `setTimeout` force the DOM to
   navigator.mediaDevices
     .getUserMedia({ video: true, audio: false })
     .then((stream) => {
