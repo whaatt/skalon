@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "lib": ["es2020", "DOM"],
+    "moduleResolution": "node",
+    "module": "esnext",
+    "target": "esnext",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true
+  }
+}
