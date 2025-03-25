@@ -40,32 +40,16 @@ a {
   text-decoration: none;
 }
 
-a.scratch {
-  color: #666666;
-}
-
 .dark a {
   color: #ff0099;
-}
-
-.dark a.scratch {
-  color: #999999;
 }
 
 a:visited {
   color: blue;
 }
 
-a:visited.scratch {
-  color: #666666;
-}
-
 .dark a:visited {
   color: #ff0099;
-}
-
-.dark a:visited.scratch {
-  color: #999999;
 }
 
 a.post-link {
