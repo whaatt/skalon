@@ -31,7 +31,8 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*[^/])$ /$1/ [L,NC,NE,R=301]
 
 # Permanently redirect `temp` to `scratch`.
-RewriteRule ^/temp/(.*)$ /scratch/$1 [L,NC,NE,R=301]
+RewriteRule ^temp$ /scratch/ [L,NC,NE,R=301]
+RewriteRule ^temp/(.*)$ /scratch/$1 [L,NC,NE,R=301]
 
 # DEPRECATED: We want Cloudflare caching.
 # Disable caching of most static files.
