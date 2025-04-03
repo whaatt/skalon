@@ -1,0 +1,19 @@
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+#content {
+  width: 100%;
+  height: 100%;
+}
+
+#capture-container {
+  width: 0;
+  overflow: hidden;
+}
+
+#published {
+  display: none;
+}
