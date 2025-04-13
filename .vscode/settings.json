@@ -24,6 +24,6 @@
   },
   "[xml]": {
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "mikeburgh.xml-format"
   }
 }

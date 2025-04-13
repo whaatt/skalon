@@ -13,6 +13,10 @@ const capture = /** @type{HTMLInputElement} */ (
   document.getElementById("capture")
 );
 
+const canvas = /** @type{HTMLDivElement} */ (
+  document.getElementById("aurafont-canvas")
+);
+
 const /** @type{Record<string, number>} */ keysDown = {};
 const /** @type{Record<string, string>} */ glyphForKeyDown = {};
 let /** @type{string | null} */ lastNonRepeatKeyDown = null;
@@ -66,5 +70,11 @@ window.addEventListener("keyup", (event) => {
   }
   const glyph = glyphForKeyDown[event.code];
   delete glyphForKeyDown[event.code];
-  console.log(glyph, Date.now() - timestamp);
+  console.log('"' + glyph + '"', Date.now() - timestamp);
+  const sizeFactor = glyph == " " ? 1 : (Date.now() - timestamp) / 100;
+  const glyphElement = document.createElement("div");
+  glyphElement.style.display = "inline-block";
+  glyphElement.innerHTML = glyph == " " ? "&nbsp;" : glyph;
+  glyphElement.style.fontSize = `${sizeFactor}rem`;
+  canvas.appendChild(glyphElement);
 });
