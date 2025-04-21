@@ -19,7 +19,7 @@
 import {
   Container,
   Glyph,
-  LINE_BREAK,
+  PARAGRAPH_BREAK,
   Paragraph,
   Sentence,
   Word,
@@ -27,7 +27,7 @@ import {
 
 const CLASS_CURRENT_GLYPH = "current-glyph";
 
-export const TERMINATOR_PARAGRAPH = LINE_BREAK;
+export const TERMINATOR_PARAGRAPH = PARAGRAPH_BREAK;
 const TERMINATORS_SENTENCE = [".", "!", "?"];
 const TERMINATOR_WORD = "&nbsp;";
 
@@ -43,7 +43,7 @@ export class EntityManager {
   }} */
   current;
   /** @private @type {HTMLSpanElement | null} */
-  paragraphPlaceholder;
+  cursorPlaceholder;
   /** @private @type {EntityTransformer<any>[]} */
   transformers;
   /** @private @type {{
@@ -68,8 +68,8 @@ export class EntityManager {
     };
 
     // Set initial placeholder glyph (used when we're between paragraphs):
-    this.paragraphPlaceholder = null;
-    this.enablePlaceholder();
+    this.cursorPlaceholder = null;
+    this.ensureCursor();
 
     // Transformers and animation context:
     this.transformers = [];
@@ -84,20 +84,17 @@ export class EntityManager {
   /**
    * @private
    */
-  enablePlaceholder() {
-    this.paragraphPlaceholder = new Glyph("").element;
-    this.paragraphPlaceholder.classList.add(CLASS_CURRENT_GLYPH);
-    this.current.container.element.appendChild(this.paragraphPlaceholder);
-  }
-
-  /**
-   * @private
-   */
-  disablePlaceholder() {
-    if (this.paragraphPlaceholder) {
-      this.paragraphPlaceholder.remove();
-      this.paragraphPlaceholder = null;
+  ensureCursor() {
+    if (this.cursorPlaceholder) {
+      this.cursorPlaceholder.remove();
+      this.cursorPlaceholder = null;
     }
+    this.cursorPlaceholder = new Glyph("").element;
+    this.cursorPlaceholder.classList.add(CLASS_CURRENT_GLYPH);
+    this.current.word?.element.appendChild(this.cursorPlaceholder) ||
+      this.current.sentence?.element.appendChild(this.cursorPlaceholder) ||
+      this.current.paragraph?.element.appendChild(this.cursorPlaceholder) ||
+      this.current.container?.element.appendChild(this.cursorPlaceholder);
   }
 
   backspace() {
@@ -105,37 +102,24 @@ export class EntityManager {
     this.current.paragraph = this.current.container.getLastItem();
     this.current.sentence = this.current.paragraph?.getLastItem() || null;
     this.current.word = this.current.sentence?.getLastItem() || null;
-    if (document.getElementsByClassName(CLASS_CURRENT_GLYPH).length === 0) {
-      this.enablePlaceholder();
-    }
+    this.ensureCursor();
   }
 
   /**
    * @param {string} character
    */
   startGlyph(character) {
-    // Map all whitespace characters to a non-breaking space:
-    if (character.trim() === "") {
+    // Map all whitespace characters to a non-breaking space HTML entity:
+    if (character !== TERMINATOR_PARAGRAPH && character.trim() === "") {
       character = TERMINATOR_WORD;
     }
 
-    // Map enter to a line break:
-    if (character === "Enter") {
-      character = TERMINATOR_PARAGRAPH;
-    }
-
-    // Ensure wrapping context exists:
+    // Ensure wrapping context exists to add the glyph to:
     this.ensureWord();
 
     // Create and add the glyph node:
     const glyph = new Glyph(character);
     this.current.word?.addItem(glyph);
-
-    // Update cursor position:
-    Array.from(document.getElementsByClassName(CLASS_CURRENT_GLYPH)).forEach(
-      (element) => element.classList.remove(CLASS_CURRENT_GLYPH)
-    );
-    glyph.element.classList.add(CLASS_CURRENT_GLYPH);
 
     // Finish any appropriate wrapping contexts:
     if (character === TERMINATOR_PARAGRAPH) {
@@ -145,6 +129,9 @@ export class EntityManager {
     } else if (character === TERMINATOR_WORD) {
       this.finishWord();
     }
+
+    // Ensure the cursor position is updated:
+    this.ensureCursor();
     return glyph;
   }
 
@@ -184,7 +171,6 @@ export class EntityManager {
       return;
     }
 
-    this.disablePlaceholder();
     const paragraph = new Paragraph();
     this.current.container.addItem(paragraph);
     this.current.paragraph = paragraph;
@@ -214,7 +200,6 @@ export class EntityManager {
     this.finishSentence();
     this.current.paragraph?.finishGrouping();
     this.current.paragraph = null;
-    this.enablePlaceholder();
   }
 
   /**

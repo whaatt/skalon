@@ -41,8 +41,9 @@
  * @typedef {import("./typings").EntityTransformer<any, Context>} EntityTransformer
  */
 
-export const LINE_BREAK = "<br />";
+export const PARAGRAPH_BREAK = "\n";
 const CLASS_INLINE_BLOCK = "text-inline-block";
+const CLASS_PARAGRAPH_BREAK = "text-paragraph-break";
 
 /**
  * @abstract
@@ -148,8 +149,9 @@ export class Glyph {
       endTimestamp: null,
       groupPosition: null,
     };
-    if (character === LINE_BREAK) {
-      this.element = document.createElement("br");
+    if (character === PARAGRAPH_BREAK) {
+      this.element = document.createElement("span");
+      this.element.classList.add(CLASS_PARAGRAPH_BREAK);
       return;
     }
     this.element = document.createElement("div");

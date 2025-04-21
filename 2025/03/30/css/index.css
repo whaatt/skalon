@@ -116,7 +116,7 @@ body {
   }
 }
 
-.current-glyph::after {
+.current-glyph:not(.text-paragraph-break)::after {
   display: inline-block;
   animation: cursor-blink 1s ease-in-out infinite;
   background: brown;
