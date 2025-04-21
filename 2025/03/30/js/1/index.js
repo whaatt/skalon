@@ -1,3 +1,6 @@
+import { EntityManager, TERMINATOR_PARAGRAPH } from "./modules/manager.js";
+import { Glyph } from "./modules/model.js";
+
 /**
  * Notes:
  * - Only use `insertText` and `insertFromComposition for glyph creation
@@ -12,15 +15,18 @@
 const capture = /** @type{HTMLInputElement} */ (
   document.getElementById("capture")
 );
-
 const canvas = /** @type{HTMLDivElement} */ (
   document.getElementById("aurafont-canvas")
 );
 
 const /** @type{Record<string, number>} */ keysDown = {};
-const /** @type{Record<string, string>} */ glyphForKeyDown = {};
+const /** @type{Record<string, Glyph>} */ glyphForKeyDown = {};
 let /** @type{string | null} */ lastNonRepeatKeyDown = null;
 
+const manager = new EntityManager(canvas);
+manager.startAnimation();
+
+// Force all focus to the invisible input element:
 window.addEventListener("focus", () => {
   capture.focus();
 });
@@ -31,6 +37,13 @@ window.addEventListener("focus", () => {
 // blur it once we pick up text). This lets us avoid weird artifacts like the
 // MacOS accent context menu while long-pressing a key.
 window.addEventListener("keydown", (event) => {
+  if (event.code === "Backspace") {
+    // Use for debugging:
+    console.log("Invoked backspace");
+    manager.backspace();
+    return;
+  }
+
   if (!keysDown[event.code]) {
     keysDown[event.code] = Date.now();
     lastNonRepeatKeyDown = event.code;
@@ -47,13 +60,14 @@ capture.addEventListener("input", (event) => {
   }
 
   if (inputType === "insertText" && inputEvent.data) {
-    glyphForKeyDown[lastNonRepeatKeyDown] = inputEvent.data;
+    glyphForKeyDown[lastNonRepeatKeyDown] = manager.startGlyph(inputEvent.data);
     capture.blur();
   } else if (inputType === "insertFromComposition" && inputEvent.data) {
-    glyphForKeyDown[lastNonRepeatKeyDown] = inputEvent.data;
+    glyphForKeyDown[lastNonRepeatKeyDown] = manager.startGlyph(inputEvent.data);
     capture.blur();
   } else if (inputType === "insertLineBreak") {
-    glyphForKeyDown[lastNonRepeatKeyDown] = "Enter";
+    glyphForKeyDown[lastNonRepeatKeyDown] =
+      manager.startGlyph(TERMINATOR_PARAGRAPH);
     capture.blur();
   }
 });
@@ -63,18 +77,21 @@ capture.addEventListener("input", (event) => {
 // `input` glyphs with their most recent `keydown`, then dequeue them the next
 // time a `keyup` matches the same key as that `keydown`.
 window.addEventListener("keyup", (event) => {
+  // Use for debugging:
   const timestamp = keysDown[event.code];
+
   delete keysDown[event.code];
   if (!glyphForKeyDown[event.code]) {
     return;
   }
   const glyph = glyphForKeyDown[event.code];
+  glyph.release();
   delete glyphForKeyDown[event.code];
-  console.log('"' + glyph + '"', Date.now() - timestamp);
-  const sizeFactor = glyph == " " ? 1 : (Date.now() - timestamp) / 100;
-  const glyphElement = document.createElement("div");
-  glyphElement.style.display = "inline-block";
-  glyphElement.innerHTML = glyph == " " ? "&nbsp;" : glyph;
-  glyphElement.style.fontSize = `${sizeFactor}rem`;
-  canvas.appendChild(glyphElement);
+
+  // Use for debugging:
+  console.log(
+    `Invoked [${glyph.element.innerHTML}] for ${
+      Date.now() - timestamp
+    } milliseconds`
+  );
 });

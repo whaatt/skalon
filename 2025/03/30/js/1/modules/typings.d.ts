@@ -46,10 +46,10 @@ type EntityBase<Tag extends TagTypes> = {
       endTimestamp: number | null;
       groupPosition: [number, number] | null;
     };
+    element: HTMLDivElement | HTMLSpanElement;
 
     getDuration(): number | null;
-    createElement(): HTMLSpanElement | HTMLDivElement;
-    transformWith<Context extends Record<any, any>>(
+    transformWith<Context extends EntityTransformerContextBase>(
       transformer: EntityTransformer<any, Context>,
       context: Context
     ): void;
@@ -79,8 +79,10 @@ export type EntitySequence<Tag extends TagSequenceTypes> = {
       pauseBeforeWord: number | null;
     };
 
+    getDuration(): number;
     addItem(item: ItemsOf<Tag>): void;
-    removeLastItem(): void;
+    getLastItem(): ItemsOf<Tag> | null;
+    removeLastGlyphAndResumeNestedSequences(): boolean;
     finishGrouping(): void;
     resumeGrouping(): void;
   };
@@ -99,11 +101,20 @@ export type EntitySequences = {
 type Entity = EntityAtomic | EntitySequences;
 
 /**
+ * A base transformer context with time-related properties.
+ */
+type EntityTransformerContextBase = {
+  timeDelta: number;
+  timeElapsed: number;
+  lastFrameTime: number;
+};
+
+/**
  * A transformer that can be applied to an entity.
  */
 export type EntityTransformer<
   EntityType extends Entity,
-  Context extends Record<any, any>
+  Context extends EntityTransformerContextBase
 > = {
   transform(entity: EntityType, context: Context): void;
 };

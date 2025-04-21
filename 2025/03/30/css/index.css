@@ -100,6 +100,29 @@ body {
   content: "";
 } */
 
+.text-inline-block {
+  display: inline-block;
+}
+
+@keyframes cursor-blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.current-glyph::after {
+  display: inline-block;
+  animation: cursor-blink 1s ease-in-out infinite;
+  background: brown;
+  content: "\00a0";
+}
+
 #published {
   display: none;
 }

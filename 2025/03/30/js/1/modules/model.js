@@ -1,47 +1,58 @@
 /**
- * @typedef {import("./model.d.ts").TagGlyph} TagGlyph
+ * @typedef {import("./typings").TagGlyph} TagGlyph
+ * @typedef {import("./typings").TagWord} TagWord
+ * @typedef {import("./typings").TagSentence} TagSentence
+ * @typedef {import("./typings").TagParagraph} TagParagraph
+ * @typedef {import("./typings").TagContainer} TagContainer
  */
 
 /**
- * @typedef {import("./model.d.ts").TagSequenceTypes} TagSequenceTypes
+ * @typedef {import("./typings").TagSequenceTypes} TagSequenceTypes
  */
 
 /**
- * @typedef {import("./model.d.ts").EntityAtomic} EntityAtomic
+ * @typedef {import("./typings").EntityAtomic} EntityAtomic
  */
 
 /**
- * @typedef {import("./model.d.ts").EntitySequences} EntitySequences
+ * @typedef {import("./typings").EntitySequences} EntitySequences
  */
 
 /**
- * @typedef {import("./model.d.ts").Entity} Entity
+ * @typedef {import("./typings").Entity} Entity
  */
 
 /**
  * @template {TagSequenceTypes} Tag
- * @typedef {import("./model.d.ts").ItemsOf<Tag>} ItemsOf
+ * @typedef {import("./typings").ItemsOf<Tag>} ItemsOf
  */
 
 /**
  * @template {TagSequenceTypes} Tag
- * @typedef {import("./model.d.ts").EntitySequence<Tag>} EntitySequence
+ * @typedef {import("./typings").EntitySequence<Tag>} EntitySequence
  */
 
 /**
- * @template {Record<any, any>} Context
- * @typedef {import("./model.d.ts").EntityTransformer<any, Context>} EntityTransformer
+ * @typedef {import("./typings").EntityTransformerContextBase} EntityTransformerContextBase
  */
+
+/**
+ * @template {EntityTransformerContextBase} Context
+ * @typedef {import("./typings").EntityTransformer<any, Context>} EntityTransformer
+ */
+
+export const LINE_BREAK = "<br />";
+const CLASS_INLINE_BLOCK = "text-inline-block";
 
 /**
  * @abstract
  * @class
- * @template {Record<any, any>} Context
+ * @template {EntityTransformerContextBase} Context
  * @implements {EntityTransformer<Context>}
  */
-class EntityTransformerBase {
+export class EntityTransformerBase {
   /**
-   * @param {EntityAtomic} item
+   * @readonly @param {EntityAtomic} item
    * @param {Context} context
    */
   transformGlyph(item, context) {
@@ -49,7 +60,7 @@ class EntityTransformerBase {
   }
 
   /**
-   * @param {EntitySequence<"Word">} item
+   * @readonly @param {EntitySequence<"Word">} item
    * @param {Context} context
    */
   transformWord(item, context) {
@@ -57,7 +68,7 @@ class EntityTransformerBase {
   }
 
   /**
-   * @param {EntitySequence<"Sentence">} item
+   * @readonly @param {EntitySequence<"Sentence">} item
    * @param {Context} context
    */
   transformSentence(item, context) {
@@ -65,7 +76,7 @@ class EntityTransformerBase {
   }
 
   /**
-   * @param {EntitySequence<"Paragraph">} item
+   * @readonly @param {EntitySequence<"Paragraph">} item
    * @param {Context} context
    */
   transformParagraph(item, context) {
@@ -73,7 +84,7 @@ class EntityTransformerBase {
   }
 
   /**
-   * @param {EntitySequence<"Container">} item
+   * @readonly @param {EntitySequence<"Container">} item
    * @param {Context} context
    */
   transformContainer(item, context) {
@@ -111,7 +122,7 @@ class EntityTransformerBase {
  * @class
  * @implements {EntityAtomic}
  */
-class Glyph {
+export class Glyph {
   /** @type {TagGlyph} */
   tag = "Glyph";
   /** @type {false} */
@@ -124,6 +135,8 @@ class Glyph {
     groupPosition: [number, number] | null;
   }} */
   metrics;
+  /** @type {HTMLSpanElement} */
+  element;
 
   /**
    * @param {string} character
@@ -135,9 +148,18 @@ class Glyph {
       endTimestamp: null,
       groupPosition: null,
     };
-    this.transformState = {};
+    if (character === LINE_BREAK) {
+      this.element = document.createElement("br");
+      return;
+    }
+    this.element = document.createElement("div");
+    this.element.classList.add(CLASS_INLINE_BLOCK);
+    this.element.innerHTML = character;
   }
 
+  /**
+   * @returns {number}
+   */
   getDuration() {
     if (this.metrics.startTimestamp === null) {
       return 0;
@@ -154,13 +176,8 @@ class Glyph {
     this.metrics.endTimestamp = Date.now();
   }
 
-  createElement() {
-    // TODO.
-    return document.createElement("span");
-  }
-
   /**
-   * @template {Record<any, any>} Context
+   * @template {EntityTransformerContextBase} Context
    * @param {EntityTransformer<Context>} transformer
    * @param {Context} context
    */
@@ -189,6 +206,11 @@ class EntitySequenceGeneric {
     groupPosition: [number, number] | null;
   }} */
   metrics;
+  /**
+   * @abstract
+   * @type {HTMLElement}
+   */
+  element;
 
   /**
    * @param {Tag} tag
@@ -203,8 +225,12 @@ class EntitySequenceGeneric {
       pauseBeforeWord: null,
       groupPosition: null,
     };
+    this.element = document.createElement("span");
   }
 
+  /**
+   * @returns {number}
+   */
   getDuration() {
     if (this.metrics.startTimestamp === null) {
       return 0;
@@ -218,7 +244,7 @@ class EntitySequenceGeneric {
   }
 
   getSequenceInProgress() {
-    return this.metrics.endTimestamp !== null;
+    return this.metrics.startTimestamp !== null;
   }
 
   /**
@@ -232,18 +258,55 @@ class EntitySequenceGeneric {
       this.metrics.startTimestamp = item.metrics.startTimestamp;
     }
     this.items.push(item);
+    this.element.appendChild(item.element);
     this.updateMetrics();
   }
 
-  removeLastItem() {
+  /**
+   * @returns {ItemsOf<Tag> | null}
+   */
+  getLastItem() {
+    if (this.items.length === 0) {
+      return null;
+    }
+    return this.items[this.items.length - 1];
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  removeLastGlyphAndResumeNestedSequences() {
+    // Remove last item:
     if (!this.getSequenceInProgress()) {
-      return;
+      return false;
     }
     if (this.items.length === 0) {
-      return;
+      return false;
     }
-    this.items.pop();
-    this.updateMetrics();
+
+    // Resume last item(s) recursively and find a trailing glyph to remove:
+    while (this.items.length > 0) {
+      const previousItem = this.items[this.items.length - 1];
+      if (previousItem.tag === "Glyph") {
+        this.element.removeChild(previousItem.element);
+        this.items.pop();
+        return true;
+      }
+
+      // TODO: Figure out why TS is not narrowing `previousItem` properly.
+      const previousItemSequence = /** @type{EntitySequences} */ (previousItem);
+      previousItemSequence.resumeGrouping();
+      if (previousItemSequence.removeLastGlyphAndResumeNestedSequences()) {
+        return true;
+      }
+
+      this.element.removeChild(previousItem.element);
+      this.items.pop();
+      this.updateMetrics();
+    }
+
+    // No previous item to resume and recurse on:
+    return false;
   }
 
   updateMetrics() {
@@ -274,14 +337,7 @@ class EntitySequenceGeneric {
   }
 
   /**
-   * @abstract
-   */
-  createElement() {
-    return document.createElement("span");
-  }
-
-  /**
-   * @template {Record<any, any>} Context
+   * @template {EntityTransformerContextBase} Context
    * @param {EntityTransformer<Context>} transformer
    * @param {Context} context
    */
@@ -298,12 +354,27 @@ class EntitySequenceGeneric {
  */
 const constrainEntitySequenceGeneric = EntitySequenceGeneric;
 
+const /** @type{`entity-${Lowercase<TagWord>}`} */ CLASS_ENTITY_WORD =
+    "entity-word";
+const /** @type{`entity-${Lowercase<TagSentence>}`} */ CLASS_ENTITY_SENTENCE =
+    "entity-sentence";
+const /** @type{`entity-${Lowercase<TagParagraph>}`} */ CLASS_ENTITY_PARAGRAPH =
+    "entity-paragraph";
+const /** @type{`entity-${Lowercase<TagContainer>}`} */ CLASS_ENTITY_CONTAINER =
+    "entity-container";
+
 /**
  * @extends {EntitySequenceGeneric<"Word">}
  */
 class Word extends EntitySequenceGeneric {
+  /** @type {HTMLSpanElement} */
+  element;
+
   constructor() {
     super("Word");
+    this.element = document.createElement("div");
+    this.element.classList.add(CLASS_ENTITY_WORD);
+    this.element.classList.add(CLASS_INLINE_BLOCK);
   }
 }
 
@@ -311,8 +382,14 @@ class Word extends EntitySequenceGeneric {
  * @extends {EntitySequenceGeneric<"Sentence">}
  */
 class Sentence extends EntitySequenceGeneric {
+  /** @type {HTMLSpanElement} */
+  element;
+
   constructor() {
     super("Sentence");
+    this.element = document.createElement("div");
+    this.element.classList.add(CLASS_ENTITY_SENTENCE);
+    this.element.classList.add(CLASS_INLINE_BLOCK);
   }
 }
 
@@ -320,8 +397,13 @@ class Sentence extends EntitySequenceGeneric {
  * @extends {EntitySequenceGeneric<"Paragraph">}
  */
 class Paragraph extends EntitySequenceGeneric {
+  /** @type {HTMLDivElement} */
+  element;
+
   constructor() {
     super("Paragraph");
+    this.element = document.createElement("div");
+    this.element.classList.add(CLASS_ENTITY_PARAGRAPH);
   }
 }
 
@@ -329,7 +411,30 @@ class Paragraph extends EntitySequenceGeneric {
  * @extends {EntitySequenceGeneric<"Container">}
  */
 class Container extends EntitySequenceGeneric {
-  constructor() {
+  /** @type {HTMLDivElement} */
+  element;
+
+  constructor(containerElement = document.createElement("div")) {
     super("Container");
+    this.element = containerElement;
+    this.element.classList.add(CLASS_ENTITY_CONTAINER);
   }
 }
+
+// Ugly typecasting to export individual entity classes in terms of their common
+// public interface.
+const /** @type{new (...args: any[]) => EntitySequence<"Word">} */ WordExport =
+    Word;
+const /** @type{new (...args: any[]) => EntitySequence<"Sentence">} */ SentenceExport =
+    Sentence;
+const /** @type{new (...args: any[]) => EntitySequence<"Paragraph">} */ ParagraphExport =
+    Paragraph;
+const /** @type{new (...args: any[]) => EntitySequence<"Container">} */ ContainerExport =
+    Container;
+
+export {
+  ContainerExport as Container,
+  ParagraphExport as Paragraph,
+  SentenceExport as Sentence,
+  WordExport as Word,
+};
