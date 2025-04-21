@@ -1,5 +1,6 @@
 import { EntityManager, TERMINATOR_PARAGRAPH } from "./modules/manager.js";
 import { Glyph } from "./modules/model.js";
+import { GlyphInflationTransformer } from "./modules/transformers.js";
 
 /**
  * Notes:
@@ -24,6 +25,7 @@ const /** @type{Record<string, Glyph>} */ glyphForKeyDown = {};
 let /** @type{string | null} */ lastNonRepeatKeyDown = null;
 
 const manager = new EntityManager(canvas);
+manager.addTransformer(new GlyphInflationTransformer());
 manager.startAnimation();
 
 // Force all focus to the invisible input element:

@@ -7,6 +7,10 @@
  */
 
 /**
+ * @typedef {import("./typings").TagTypes} TagTypes
+ */
+
+/**
  * @typedef {import("./typings").TagSequenceTypes} TagSequenceTypes
  */
 
@@ -20,6 +24,11 @@
 
 /**
  * @typedef {import("./typings").Entity} Entity
+ */
+
+/**
+ * @template {TagTypes} Tag
+ * @typedef {import("./typings").EntityOf<Tag>} EntityOf
  */
 
 /**
@@ -37,82 +46,78 @@
  */
 
 /**
- * @template {EntityTransformerContextBase} Context
- * @typedef {import("./typings").EntityTransformer<any, Context>} EntityTransformer
+ * @typedef {import("./typings").EntityTransformer} EntityTransformer
  */
 
 export const PARAGRAPH_BREAK = "\n";
-const CLASS_INLINE_BLOCK = "text-inline-block";
-const CLASS_PARAGRAPH_BREAK = "text-paragraph-break";
+const CLASS_INLINE = "text-inline";
+export const CLASS_PARAGRAPH_BREAK = "text-paragraph-break";
 
 /**
  * @abstract
  * @class
- * @template {EntityTransformerContextBase} Context
- * @implements {EntityTransformer<Context>}
+ * @implements {EntityTransformer}
  */
 export class EntityTransformerBase {
   /**
    * @readonly @param {EntityAtomic} item
-   * @param {Context} context
+   * @param {EntityTransformerContextBase} contextBase
    */
-  transformGlyph(item, context) {
-    // TODO.
-  }
+  transformGlyph(item, contextBase) {}
 
   /**
    * @readonly @param {EntitySequence<"Word">} item
-   * @param {Context} context
+   * @param {EntityTransformerContextBase} contextBase
    */
-  transformWord(item, context) {
-    // TODO.
+  transformWord(item, contextBase) {
+    item.items.forEach((item) => this.transform(item, contextBase));
   }
 
   /**
    * @readonly @param {EntitySequence<"Sentence">} item
-   * @param {Context} context
+   * @param {EntityTransformerContextBase} contextBase
    */
-  transformSentence(item, context) {
-    // TODO.
+  transformSentence(item, contextBase) {
+    item.items.forEach((item) => this.transform(item, contextBase));
   }
 
   /**
    * @readonly @param {EntitySequence<"Paragraph">} item
-   * @param {Context} context
+   * @param {EntityTransformerContextBase} contextBase
    */
-  transformParagraph(item, context) {
-    // TODO.
+  transformParagraph(item, contextBase) {
+    item.items.forEach((item) => this.transform(item, contextBase));
   }
 
   /**
    * @readonly @param {EntitySequence<"Container">} item
-   * @param {Context} context
+   * @param {EntityTransformerContextBase} contextBase
    */
-  transformContainer(item, context) {
-    // TODO.
+  transformContainer(item, contextBase) {
+    item.items.forEach((item) => this.transform(item, contextBase));
   }
 
   /**
    * @template {Entity} Item
    * @param {Item} item
-   * @param {Context} context
+   * @param {EntityTransformerContextBase} contextBase
    */
-  transform(item, context) {
+  transform(item, contextBase) {
     switch (item.tag) {
       case "Glyph":
-        this.transformGlyph(item, context);
+        this.transformGlyph(item, contextBase);
         break;
       case "Word":
-        this.transformWord(item, context);
+        this.transformWord(item, contextBase);
         break;
       case "Sentence":
-        this.transformSentence(item, context);
+        this.transformSentence(item, contextBase);
         break;
       case "Paragraph":
-        this.transformParagraph(item, context);
+        this.transformParagraph(item, contextBase);
         break;
       case "Container":
-        this.transformContainer(item, context);
+        this.transformContainer(item, contextBase);
     }
   }
 }
@@ -149,13 +154,12 @@ export class Glyph {
       endTimestamp: null,
       groupPosition: null,
     };
-    if (character === PARAGRAPH_BREAK) {
-      this.element = document.createElement("span");
-      this.element.classList.add(CLASS_PARAGRAPH_BREAK);
-      return;
-    }
     this.element = document.createElement("div");
-    this.element.classList.add(CLASS_INLINE_BLOCK);
+    this.element.classList.add(CLASS_INLINE);
+    if (character === PARAGRAPH_BREAK) {
+      this.element.classList.add(CLASS_PARAGRAPH_BREAK);
+      character = "&nbsp;";
+    }
     this.element.innerHTML = character;
   }
 
@@ -179,12 +183,11 @@ export class Glyph {
   }
 
   /**
-   * @template {EntityTransformerContextBase} Context
-   * @param {EntityTransformer<Context>} transformer
-   * @param {Context} context
+   * @param {EntityTransformer} transformer
+   * @param {EntityTransformerContextBase} contextBase
    */
-  transformWith(transformer, context) {
-    transformer.transform(this, context);
+  transformWith(transformer, contextBase) {
+    transformer.transform(this, contextBase);
   }
 }
 
@@ -339,12 +342,11 @@ class EntitySequenceGeneric {
   }
 
   /**
-   * @template {EntityTransformerContextBase} Context
-   * @param {EntityTransformer<Context>} transformer
-   * @param {Context} context
+   * @param {EntityTransformer} transformer
+   * @param {EntityTransformerContextBase} contextBase
    */
-  transformWith(transformer, context) {
-    transformer.transform(this, context);
+  transformWith(transformer, contextBase) {
+    transformer.transform(/** @type {Entity} */ (this), contextBase);
   }
 }
 
@@ -376,7 +378,7 @@ class Word extends EntitySequenceGeneric {
     super("Word");
     this.element = document.createElement("div");
     this.element.classList.add(CLASS_ENTITY_WORD);
-    this.element.classList.add(CLASS_INLINE_BLOCK);
+    this.element.classList.add(CLASS_INLINE);
   }
 }
 
@@ -391,7 +393,7 @@ class Sentence extends EntitySequenceGeneric {
     super("Sentence");
     this.element = document.createElement("div");
     this.element.classList.add(CLASS_ENTITY_SENTENCE);
-    this.element.classList.add(CLASS_INLINE_BLOCK);
+    this.element.classList.add(CLASS_INLINE);
   }
 }
 

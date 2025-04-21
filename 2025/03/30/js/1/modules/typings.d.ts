@@ -35,7 +35,7 @@ type TagHierarchy<Tag> = Tag extends IsSingle<Tag, TagSequenceTypes>
   : never;
 
 /**
- * A base type for all text entities.
+ * A base type for all discrete text entities.
  */
 type EntityBase<Tag extends TagTypes> = {
   [K in TagTypes]: {
@@ -49,9 +49,9 @@ type EntityBase<Tag extends TagTypes> = {
     element: HTMLDivElement | HTMLSpanElement;
 
     getDuration(): number | null;
-    transformWith<Context extends EntityTransformerContextBase>(
-      transformer: EntityTransformer<any, Context>,
-      context: Context
+    transformWith(
+      transformer: EntityTransformer,
+      contextBase: EntityTransformerContextBase
     ): void;
   };
 }[Tag];
@@ -62,11 +62,19 @@ type EntityBase<Tag extends TagTypes> = {
 export type EntityAtomic = EntityBase<TagAtomicTypes>;
 
 /**
+ * Helper type to get the type of an entity for a given tag.
+ */
+export type EntityOf<Tag extends TagTypes> = Tag extends TagSequenceTypes
+  ? EntitySequence<Tag>
+  : EntityAtomic;
+
+/**
  * Helper type to get the type of items for a given sequence tag.
  */
-export type ItemsOf<Tag> = TagHierarchy<Tag> extends TagSequenceTypes
-  ? EntitySequence<TagHierarchy<Tag>>
-  : EntityAtomic;
+export type ItemsOf<Tag extends TagSequenceTypes> =
+  TagHierarchy<Tag> extends TagSequenceTypes
+    ? EntitySequence<TagHierarchy<Tag>>
+    : EntityAtomic;
 
 /**
  * A sequence of entities (itself an entity).
@@ -112,9 +120,6 @@ type EntityTransformerContextBase = {
 /**
  * A transformer that can be applied to an entity.
  */
-export type EntityTransformer<
-  EntityType extends Entity,
-  Context extends EntityTransformerContextBase
-> = {
-  transform(entity: EntityType, context: Context): void;
+export type EntityTransformer = {
+  transform(entity: Entity, contextBase: EntityTransformerContextBase): void;
 };

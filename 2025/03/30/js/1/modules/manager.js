@@ -3,8 +3,11 @@
  */
 
 /**
- * @template {EntityTransformerContextBase} Context
- * @typedef {import("./typings").EntityTransformer<any, Context>} EntityTransformer
+ * @typedef {import("./typings").Entity} Entity
+ */
+
+/**
+ * @typedef {import("./typings").EntityTransformer} EntityTransformer
  */
 
 /**
@@ -44,7 +47,7 @@ export class EntityManager {
   current;
   /** @private @type {HTMLSpanElement | null} */
   cursorPlaceholder;
-  /** @private @type {EntityTransformer<any>[]} */
+  /** @private @type {EntityTransformer[]} */
   transformers;
   /** @private @type {{
     timeDelta: number;
@@ -204,16 +207,15 @@ export class EntityManager {
 
   /**
    * @private
-   * @template {EntityTransformerContextBase} Context
-   * @param {EntityTransformer<Context>} transformer
-   * @param {Context} context
+   * @param {EntityTransformer} transformer
+   * @param {EntityTransformerContextBase} contextBase
    */
-  transformWith(transformer, context) {
-    transformer.transform(this, context);
+  transformWith(transformer, contextBase) {
+    transformer.transform(this.current.container, contextBase);
   }
 
   /**
-   * @param {EntityTransformer<EntityTransformerContextBase>} transformer
+   * @param {EntityTransformer} transformer
    */
   addTransformer(transformer) {
     this.transformers.push(transformer);
@@ -232,7 +234,7 @@ export class EntityManager {
 
     // Apply transformations:
     this.transformers.forEach((transformer) =>
-      this.transformWith.bind(this, transformer)
+      this.transformWith(transformer, this.animationContext)
     );
 
     // Continue animation loop:
