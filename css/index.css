@@ -57,6 +57,11 @@ a.post-link {
   width: 180px;
 }
 
+span.outbound-arrow {
+  display: inline-block;
+  transform: rotate(-45deg);
+}
+
 pre {
   font-family: "Modernist Mono", monospace;
 }

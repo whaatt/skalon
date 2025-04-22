@@ -1,17 +1,8 @@
-import { EntityManager, TERMINATOR_PARAGRAPH } from "./modules/manager.js";
+import { TERMINATOR_PARAGRAPH } from "./modules/constants.js";
+import { EntityManager } from "./modules/manager.js";
 import { Glyph } from "./modules/model.js";
-import { GlyphInflationTransformer } from "./modules/transformers.js";
-
-/**
- * Notes:
- * - Only use `insertText` and `insertFromComposition for glyph creation
- *   as append-only (plus `insertLineBreak`)
- * - Add backspace input type?
- * - Dwell time for combining characters is still determined from most recent
- *   key down (maybe the actual `InputEvent` with data) to key up
- * - Interface itself will have cursor movement + selection ability
- * - Can clear entire canvas OR apply "white-out" from cursor position
- */
+import { GlyphInflationTransformer } from "./modules/transformer/glyphInflation.js";
+import { GlyphIntervalColorizer } from "./modules/transformer/glyphIntervalColorizer.js";
 
 const capture = /** @type{HTMLInputElement} */ (
   document.getElementById("capture")
@@ -26,6 +17,7 @@ let /** @type{string | null} */ lastNonRepeatKeyDown = null;
 
 const manager = new EntityManager(canvas);
 manager.addTransformer(new GlyphInflationTransformer());
+manager.addTransformer(new GlyphIntervalColorizer());
 manager.startAnimation();
 
 // Force all focus to the invisible input element:

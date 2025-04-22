@@ -1,38 +1,31 @@
 /**
- * @typedef {import("./typings").EntityTransformerContextBase} EntityTransformerContextBase
+ * @typedef {import("./typings.js").EntityTransformerContextBase} EntityTransformerContextBase
  */
 
 /**
- * @typedef {import("./typings").Entity} Entity
+ * @typedef {import("./typings.js").Entity} Entity
  */
 
 /**
- * @typedef {import("./typings").EntityTransformer} EntityTransformer
+ * @typedef {import("./typings.js").EntityTransformer} EntityTransformer
  */
 
 /**
- * @typedef {import("./typings").TagSequenceTypes} TagSequenceTypes
+ * @typedef {import("./typings.js").TagSequenceTypes} TagSequenceTypes
  */
 
 /**
  * @template {TagSequenceTypes} Tag
- * @typedef {import("./typings").EntitySequence<Tag>} EntitySequence
+ * @typedef {import("./typings.js").EntitySequence<Tag>} EntitySequence
  */
 
 import {
-  Container,
-  Glyph,
-  PARAGRAPH_BREAK,
-  Paragraph,
-  Sentence,
-  Word,
-} from "./model.js";
-
-const CLASS_CURRENT_GLYPH = "current-glyph";
-
-export const TERMINATOR_PARAGRAPH = PARAGRAPH_BREAK;
-const TERMINATORS_SENTENCE = [".", "!", "?"];
-const TERMINATOR_WORD = "&nbsp;";
+  CLASS_CURRENT_GLYPH,
+  TERMINATOR_PARAGRAPH,
+  TERMINATOR_WORD,
+  TERMINATORS_SENTENCE,
+} from "./constants.js";
+import { Container, Glyph, Paragraph, Sentence, Word } from "./model.js";
 
 /**
  * Orchestrator class between key events and text entities.
@@ -120,8 +113,10 @@ export class EntityManager {
     // Ensure wrapping context exists to add the glyph to:
     this.ensureWord();
 
-    // Create and add the glyph node:
+    // Create and add the glyph node (running any transformers before adding
+    // the glyph to the DOM):
     const glyph = new Glyph(character);
+    this.transform();
     this.current.word?.addItem(glyph);
 
     // Finish any appropriate wrapping contexts:
@@ -207,11 +202,11 @@ export class EntityManager {
 
   /**
    * @private
-   * @param {EntityTransformer} transformer
-   * @param {EntityTransformerContextBase} contextBase
    */
-  transformWith(transformer, contextBase) {
-    transformer.transform(this.current.container, contextBase);
+  transform() {
+    this.transformers.forEach((transformer) =>
+      this.current.container.transformWith(transformer, this.animationContext)
+    );
   }
 
   /**
@@ -233,9 +228,7 @@ export class EntityManager {
     this.animationContext.lastFrameTime = now;
 
     // Apply transformations:
-    this.transformers.forEach((transformer) =>
-      this.transformWith(transformer, this.animationContext)
-    );
+    this.transform();
 
     // Continue animation loop:
     if (this.isAnimating) {

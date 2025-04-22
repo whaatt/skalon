@@ -1,57 +1,59 @@
 /**
- * @typedef {import("./typings").TagGlyph} TagGlyph
- * @typedef {import("./typings").TagWord} TagWord
- * @typedef {import("./typings").TagSentence} TagSentence
- * @typedef {import("./typings").TagParagraph} TagParagraph
- * @typedef {import("./typings").TagContainer} TagContainer
+ * @typedef {import("./typings.js").TagGlyph} TagGlyph
+ * @typedef {import("./typings.js").TagWord} TagWord
+ * @typedef {import("./typings.js").TagSentence} TagSentence
+ * @typedef {import("./typings.js").TagParagraph} TagParagraph
+ * @typedef {import("./typings.js").TagContainer} TagContainer
+ */
+
+import {
+  CLASS_INLINE,
+  CLASS_PARAGRAPH_BREAK,
+  TERMINATOR_PARAGRAPH,
+} from "./constants.js";
+
+/**
+ * @typedef {import("./typings.js").TagTypes} TagTypes
  */
 
 /**
- * @typedef {import("./typings").TagTypes} TagTypes
+ * @typedef {import("./typings.js").TagSequenceTypes} TagSequenceTypes
  */
 
 /**
- * @typedef {import("./typings").TagSequenceTypes} TagSequenceTypes
+ * @typedef {import("./typings.js").EntityAtomic} EntityAtomic
  */
 
 /**
- * @typedef {import("./typings").EntityAtomic} EntityAtomic
+ * @typedef {import("./typings.js").EntitySequences} EntitySequences
  */
 
 /**
- * @typedef {import("./typings").EntitySequences} EntitySequences
- */
-
-/**
- * @typedef {import("./typings").Entity} Entity
+ * @typedef {import("./typings.js").Entity} Entity
  */
 
 /**
  * @template {TagTypes} Tag
- * @typedef {import("./typings").EntityOf<Tag>} EntityOf
+ * @typedef {import("./typings.js").EntityOf<Tag>} EntityOf
  */
 
 /**
  * @template {TagSequenceTypes} Tag
- * @typedef {import("./typings").ItemsOf<Tag>} ItemsOf
+ * @typedef {import("./typings.js").ItemsOf<Tag>} ItemsOf
  */
 
 /**
  * @template {TagSequenceTypes} Tag
- * @typedef {import("./typings").EntitySequence<Tag>} EntitySequence
+ * @typedef {import("./typings.js").EntitySequence<Tag>} EntitySequence
  */
 
 /**
- * @typedef {import("./typings").EntityTransformerContextBase} EntityTransformerContextBase
+ * @typedef {import("./typings.js").EntityTransformerContextBase} EntityTransformerContextBase
  */
 
 /**
- * @typedef {import("./typings").EntityTransformer} EntityTransformer
+ * @typedef {import("./typings.js").EntityTransformer} EntityTransformer
  */
-
-export const PARAGRAPH_BREAK = "\n";
-const CLASS_INLINE = "text-inline";
-export const CLASS_PARAGRAPH_BREAK = "text-paragraph-break";
 
 /**
  * @abstract
@@ -61,13 +63,13 @@ export const CLASS_PARAGRAPH_BREAK = "text-paragraph-break";
 export class EntityTransformerBase {
   /**
    * @readonly @param {EntityAtomic} item
-   * @param {EntityTransformerContextBase} contextBase
+   * @readonly @param {EntityTransformerContextBase} contextBase
    */
   transformGlyph(item, contextBase) {}
 
   /**
    * @readonly @param {EntitySequence<"Word">} item
-   * @param {EntityTransformerContextBase} contextBase
+   * @readonly @param {EntityTransformerContextBase} contextBase
    */
   transformWord(item, contextBase) {
     item.items.forEach((item) => this.transform(item, contextBase));
@@ -75,7 +77,7 @@ export class EntityTransformerBase {
 
   /**
    * @readonly @param {EntitySequence<"Sentence">} item
-   * @param {EntityTransformerContextBase} contextBase
+   * @readonly @param {EntityTransformerContextBase} contextBase
    */
   transformSentence(item, contextBase) {
     item.items.forEach((item) => this.transform(item, contextBase));
@@ -83,7 +85,7 @@ export class EntityTransformerBase {
 
   /**
    * @readonly @param {EntitySequence<"Paragraph">} item
-   * @param {EntityTransformerContextBase} contextBase
+   * @readonly @param {EntityTransformerContextBase} contextBase
    */
   transformParagraph(item, contextBase) {
     item.items.forEach((item) => this.transform(item, contextBase));
@@ -91,7 +93,7 @@ export class EntityTransformerBase {
 
   /**
    * @readonly @param {EntitySequence<"Container">} item
-   * @param {EntityTransformerContextBase} contextBase
+   * @readonly @param {EntityTransformerContextBase} contextBase
    */
   transformContainer(item, contextBase) {
     item.items.forEach((item) => this.transform(item, contextBase));
@@ -100,7 +102,7 @@ export class EntityTransformerBase {
   /**
    * @template {Entity} Item
    * @param {Item} item
-   * @param {EntityTransformerContextBase} contextBase
+   * @readonly @param {EntityTransformerContextBase} contextBase
    */
   transform(item, contextBase) {
     switch (item.tag) {
@@ -156,7 +158,7 @@ export class Glyph {
     };
     this.element = document.createElement("div");
     this.element.classList.add(CLASS_INLINE);
-    if (character === PARAGRAPH_BREAK) {
+    if (character === TERMINATOR_PARAGRAPH) {
       this.element.classList.add(CLASS_PARAGRAPH_BREAK);
       character = "&nbsp;";
     }
@@ -336,8 +338,6 @@ class EntitySequenceGeneric {
     if (this.getSequenceInProgress()) {
       return;
     }
-    // Hacky reset for the start timestamp based on prior word duration.
-    this.metrics.startTimestamp = Date.now() - this.getDuration();
     this.metrics.endTimestamp = null;
   }
 
