@@ -1,14 +1,19 @@
-@import url("https://fonts.googleapis.com/css2?family=Delius+Swash+Caps&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Delius+Swash+Caps&family=IBM+Plex+Serif:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap");
 
-html,
-body {
+html {
+  display: table;
   width: 100%;
   height: 100%;
 }
 
+body {
+  display: table-cell;
+  width: 100%;
+  font-family: "Nunito", sans-serif;
+}
+
 a {
   color: darkred;
-  font-family: "Delius Swash Caps", cursive;
   text-decoration: none;
 }
 
@@ -19,9 +24,10 @@ a:visited {
 a[disabled] {
   color: #aaa;
 }
+
 #content {
   box-sizing: border-box;
-  background-color: #f7f3f0;
+  background: #f7f3f0;
   padding: 2rem;
   width: 100%;
   height: 100%;
@@ -44,13 +50,14 @@ a[disabled] {
   margin: 0 auto;
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.2);
   border-radius: 0.75rem;
-  background-color: #f9f9f9;
+  background: #f9f9f9;
   padding: 1.5rem;
   width: 100%;
   max-width: 800px;
   height: 100%;
+  min-height: 240px;
   max-height: 800px;
-  overflow: scroll;
+  overflow: hidden;
   scrollbar-width: none;
 }
 
@@ -61,6 +68,13 @@ a[disabled] {
   100% {
     background-position: 200% 50%;
   }
+}
+
+#aurafont-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 #aurafont-title {
@@ -85,15 +99,172 @@ a[disabled] {
   text-shadow: 0 0 1rem rgba(0, 0, 0, 0.2);
 }
 
-#aurafont-canvas {
+.aurafont-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.aurafont-button:hover {
+  cursor: pointer;
+}
+
+.aurafont-header-buttons {
+  display: flex;
+  column-gap: 0.5rem;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.aurafont-header-button {
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: #fff;
+  width: 3rem;
+  height: 2.5rem;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.aurafont-header-button:hover {
+  box-shadow: 0 0 0.5rem rgba(54, 51, 255, 1);
+}
+
+#aurafont-keyboard-button {
+  background: #fed1e2;
+  font-weight: bold;
+  font-size: 1rem;
+  font-family: "Nunito", sans-serif;
+}
+
+#aurafont-keyboard-button.keyboard-button-active {
+  border: 1px solid rgba(54, 51, 255, 1);
+}
+
+#aurafont-controls-button {
+  transition: transform 0.5s ease-in-out;
+  background: #d1e2fe;
+}
+
+#aurafont-controls-button.controls-button-clicked {
+  transform: rotateZ(179.9deg);
+}
+
+#aurafont-controls-button.controls-button-active {
+  background: #fee2d1;
+}
+
+#aurafont-card {
   position: relative;
   flex-grow: 1;
-  box-sizing: border-box;
+  transform-style: preserve-3d;
+  transition: transform 1s ease;
+  width: 100%;
+  min-height: 7rem;
+}
+
+#aurafont-card.card-flipped {
+  transform: perspective(max(50vw, 50vh)) rotateY(180deg);
+}
+
+#aurafont-canvas {
+  position: absolute;
+  backface-visibility: hidden;
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
   border-radius: 0.5rem;
   background: #fee2d1;
+  width: 100%;
+  height: 100%;
+  font-family: "IBM Plex Serif", serif;
+}
+
+#aurafont-manager {
+  margin: 1rem;
+  width: calc(100% - 2rem);
+  height: calc(100% - 2rem);
+  overflow: scroll;
+  scrollbar-width: none;
+}
+
+#keyboard {
+  display: flex;
+  row-gap: 0.5rem;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  margin-top: -1.7rem;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+  border: 1px solid #eee;
+  border-radius: 0.5rem;
+  border-top-right-radius: 0;
+  border-top-left-radius: 0;
+  background: #fed1e2;
   padding: 1rem;
   width: 100%;
+}
+
+#keyboard.keyboard-hidden {
+  display: none;
+}
+
+#keyboard-help-text {
+  border: 1px solid #eee;
+  padding: 3px;
+  font-size: 70%;
+  text-align: center;
+}
+
+.keyboard-row:first-of-type {
+  margin-top: 0.2rem;
+}
+
+.keyboard-row {
+  display: flex;
+  column-gap: 0.5rem;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.key {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  background: #fff;
+  padding: 0.25rem;
+  height: 2em;
+  font-family: "Nunito", sans-serif;
+  text-align: center;
+}
+
+.key:hover {
+  box-shadow: 0 0 0.5rem rgba(54, 51, 255, 1);
+}
+
+.key:active {
+  border: 1px solid rgba(54, 51, 255, 1);
+}
+
+#aurafont-controls {
+  position: absolute;
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+  box-sizing: border-box;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  background: #d1e2fe;
+  padding: 1rem;
+  width: 100%;
+  height: 100%;
   overflow: scroll;
   scrollbar-width: none;
 }
@@ -107,7 +278,7 @@ a[disabled] {
   background-image: url(noise.svg);
   background-size: 182px;
   background-repeat: repeat;
-  background-color: transparent;
+  background: transparent;
   width: 100%;
   height: 100%;
   content: "";
@@ -143,6 +314,7 @@ a[disabled] {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 0.25rem;
   width: 100%;
 }
 

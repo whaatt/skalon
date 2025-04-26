@@ -1,4 +1,5 @@
 # Next Steps
 
-1. Add reset button and transformer picker view (and maybe publish?)
-2. Add new transformers
+1. Verify mobile view
+2. Add transformer selectors to control panel
+3. Add fancy new transformers
