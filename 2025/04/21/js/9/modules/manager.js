@@ -130,6 +130,12 @@ export class EntityManager {
 
     // Ensure the cursor position is updated:
     this.ensureCursor();
+
+    // Scroll the bottom of the container into view:
+    this.current.container.element.scrollTo(
+      0,
+      this.current.container.element.scrollHeight
+    );
     return glyph;
   }
 
@@ -210,10 +216,10 @@ export class EntityManager {
   }
 
   /**
-   * @param {EntityTransformer} transformer
+   * @param {EntityTransformer[]} transformers
    */
-  addTransformer(transformer) {
-    this.transformers.push(transformer);
+  syncTransformers(transformers) {
+    this.transformers = transformers;
   }
 
   /**

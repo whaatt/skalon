@@ -37,12 +37,12 @@
     <link rel="stylesheet" href="/css/vendor/normalize.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="css/index.css?version=1" />
+    <link rel="stylesheet" href="css/index.css?version=14" />
   </head>
   <body>
     <div id="content">
-      <div id="capture-container">
-        <textarea id="capture" spellcheck="false"></textarea>
+      <div id="aurafont-capture-container">
+        <textarea id="aurafont-capture" spellcheck="false"></textarea>
       </div>
       <div id="aurafont-container">
         <div id="aurafont-header">
@@ -51,7 +51,7 @@
             <span
               id="aurafont-keyboard-button"
               class="aurafont-button aurafont-header-button"
-              >A⃣</span
+              ><span id="aurafont-keyboard-button-text">ABC</span></span
             >
             <span
               id="aurafont-controls-button"
@@ -64,9 +64,43 @@
           <div id="aurafont-canvas">
             <div id="aurafont-manager"></div>
           </div>
-          <div id="aurafont-controls">Backside</div>
+          <div id="aurafont-controls">
+            <div class="aurafont-transformers">
+              <div
+                class="aurafont-transformer-option"
+                data-transformer-option="GlyphInflation"
+              >
+                <div class="aurafont-transformer-option-name">
+                  Glyph <span id="aurafont-inflation-demo">Inflater</span>
+                </div>
+                <div class="aurafont-transformer-option-description">
+                  Hold keys longer to make words larger.
+                </div>
+              </div>
+              <div
+                class="aurafont-transformer-option"
+                data-transformer-option="GlyphIntervalColorizer"
+              >
+                <div class="aurafont-transformer-option-name">
+                  Interval
+                  <span id="aurafont-interval-colorizer-1">C</span
+                  ><span id="aurafont-interval-colorizer-2">o</span
+                  ><span id="aurafont-interval-colorizer-3">l</span
+                  ><span id="aurafont-interval-colorizer-4">o</span
+                  ><span id="aurafont-interval-colorizer-5">r</span
+                  ><span id="aurafont-interval-colorizer-6">i</span
+                  ><span id="aurafont-interval-colorizer-7">z</span
+                  ><span id="aurafont-interval-colorizer-8">e</span
+                  ><span id="aurafont-interval-colorizer-9">r</span>
+                </div>
+                <div class="aurafont-transformer-option-description">
+                  Type faster for warmer tones and type slower for cooler tones.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div id="keyboard" class="keyboard-hidden">
+        <div id="aurafont-keyboard" class="aurafont-keyboard-hidden">
           <div class="keyboard-row">
             <span class="key aurafont-button" data-key="q">Q</span>
             <span class="key aurafont-button" data-key="w">W</span>
@@ -89,9 +123,10 @@
             <span class="key aurafont-button" data-key="j">J</span>
             <span class="key aurafont-button" data-key="k">K</span>
             <span class="key aurafont-button" data-key="l">L</span>
-            <span class="key aurafont-button" data-key=";">;</span>
+            <span class="key aurafont-button" data-key="!">!</span>
           </div>
           <div class="keyboard-row">
+            <span class="key aurafont-button" data-action="Caps">⇪</span>
             <span class="key aurafont-button" data-key="z">Z</span>
             <span class="key aurafont-button" data-key="x">X</span>
             <span class="key aurafont-button" data-key="c">C</span>
@@ -101,7 +136,11 @@
             <span class="key aurafont-button" data-key="m">M</span>
             <span class="key aurafont-button" data-key=",">,</span>
             <span class="key aurafont-button" data-key=".">.</span>
-            <span class="key aurafont-button" data-key="/">/</span>
+          </div>
+          <div class="keyboard-row">
+            <span class="key aurafont-button" data-key="Enter">Enter</span>
+            <span class="key aurafont-button" data-key=" ">Space</span>
+            <span class="key aurafont-button" data-action="Backspace">←</span>
           </div>
         </div>
         <div id="navigation">
@@ -113,6 +152,6 @@
       <div id="published">21 April 2025</div>
     </div>
     <!-- Vendor scripts go here. -->
-    <script src="js/1/index.js" type="module"></script>
+    <script src="js/9/index.js" type="module"></script>
   </body>
 </html>

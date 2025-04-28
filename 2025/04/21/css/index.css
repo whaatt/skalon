@@ -8,8 +8,12 @@ html {
 
 body {
   display: table-cell;
+  background: #f7f3f0;
   width: 100%;
   font-family: "Nunito", sans-serif;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 a {
@@ -27,13 +31,12 @@ a[disabled] {
 
 #content {
   box-sizing: border-box;
-  background: #f7f3f0;
-  padding: 2rem;
+  padding: min(1.5rem, 2vw);
   width: 100%;
   height: 100%;
 }
 
-#capture-container {
+#aurafont-capture-container {
   width: 0;
   height: 0;
   overflow: hidden;
@@ -42,7 +45,7 @@ a[disabled] {
 #aurafont-container {
   display: flex;
   position: relative;
-  row-gap: 1.5rem;
+  row-gap: min(1.5rem, 2vw);
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
@@ -51,8 +54,9 @@ a[disabled] {
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.2);
   border-radius: 0.75rem;
   background: #f9f9f9;
-  padding: 1.5rem;
+  padding: min(1.5rem, 2vw);
   width: 100%;
+  min-width: 300px;
   max-width: 800px;
   height: 100%;
   min-height: 240px;
@@ -104,13 +108,12 @@ a[disabled] {
   justify-content: center;
   align-items: center;
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
 }
 
-.aurafont-button:hover {
-  cursor: pointer;
+@media (hover: hover), (-ms-high-contrast: none) {
+  .aurafont-button:hover {
+    cursor: pointer;
+  }
 }
 
 .aurafont-header-buttons {
@@ -130,18 +133,26 @@ a[disabled] {
   text-align: center;
 }
 
-.aurafont-header-button:hover {
-  box-shadow: 0 0 0.5rem rgba(54, 51, 255, 1);
+@media (hover: hover), (-ms-high-contrast: none) {
+  .aurafont-header-button:hover {
+    box-shadow: 0 0 0.5rem rgba(54, 51, 255, 1);
+  }
 }
 
 #aurafont-keyboard-button {
   background: #fed1e2;
+}
+
+#aurafont-keyboard-button-text {
+  border: 1px solid black;
+  border-radius: 0.25rem;
+  padding: 0.25rem;
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 0.6rem;
   font-family: "Nunito", sans-serif;
 }
 
-#aurafont-keyboard-button.keyboard-button-active {
+#aurafont-keyboard-button.aurafont-keyboard-button-active {
   border: 1px solid rgba(54, 51, 255, 1);
 }
 
@@ -150,11 +161,11 @@ a[disabled] {
   background: #d1e2fe;
 }
 
-#aurafont-controls-button.controls-button-clicked {
+#aurafont-controls-button.aurafont-controls-button-clicked {
   transform: rotateZ(179.9deg);
 }
 
-#aurafont-controls-button.controls-button-active {
+#aurafont-controls-button.aurafont-controls-button-active {
   background: #fee2d1;
 }
 
@@ -167,7 +178,7 @@ a[disabled] {
   min-height: 7rem;
 }
 
-#aurafont-card.card-flipped {
+#aurafont-card.aurafont-card-flipped {
   transform: perspective(max(50vw, 50vh)) rotateY(180deg);
 }
 
@@ -188,34 +199,30 @@ a[disabled] {
   height: calc(100% - 2rem);
   overflow: scroll;
   scrollbar-width: none;
+  -webkit-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
 }
 
-#keyboard {
+#aurafont-keyboard {
   display: flex;
-  row-gap: 0.5rem;
+  row-gap: min(0.5rem, 1vw);
   flex-direction: column;
   justify-content: space-between;
   box-sizing: border-box;
-  margin-top: -1.7rem;
+  margin-top: calc(max(-1.5rem, -2vw) - 0.3rem);
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
   border: 1px solid #eee;
   border-radius: 0.5rem;
   border-top-right-radius: 0;
   border-top-left-radius: 0;
   background: #fed1e2;
-  padding: 1rem;
+  padding: min(0.5rem, 1vw);
   width: 100%;
 }
 
-#keyboard.keyboard-hidden {
+#aurafont-keyboard.aurafont-keyboard-hidden {
   display: none;
-}
-
-#keyboard-help-text {
-  border: 1px solid #eee;
-  padding: 3px;
-  font-size: 70%;
-  text-align: center;
 }
 
 .keyboard-row:first-of-type {
@@ -224,7 +231,7 @@ a[disabled] {
 
 .keyboard-row {
   display: flex;
-  column-gap: 0.5rem;
+  column-gap: min(0.5rem, 1vw);
   flex-direction: row;
   justify-content: space-between;
   width: 100%;
@@ -232,6 +239,7 @@ a[disabled] {
 
 .key {
   display: flex;
+  position: relative;
   flex: 1;
   justify-content: center;
   align-items: center;
@@ -240,18 +248,33 @@ a[disabled] {
   border: 1px solid transparent;
   border-radius: 0.25rem;
   background: #fff;
-  padding: 0.25rem;
-  height: 2em;
+  padding: 0.1rem;
+  height: 3em;
+  font-size: 0.8rem;
   font-family: "Nunito", sans-serif;
   text-align: center;
 }
 
-.key:hover {
-  box-shadow: 0 0 0.5rem rgba(54, 51, 255, 1);
+/* Hack for larger touch targets. */
+.key:before {
+  position: absolute;
+  top: max(-0.25rem - 0.25rem, -0.5vw - 0.25rem);
+  left: max(-0.25rem - 0.25rem, -0.5vw - 0.25rem);
+  background: transparent;
+  width: calc(100% + min(0.5rem, 1vw) + 0.5rem);
+  height: calc(100% + min(0.5rem, 1vw) + 0.5rem);
+  content: "";
 }
 
-.key:active {
-  border: 1px solid rgba(54, 51, 255, 1);
+@media (hover: hover), (-ms-high-contrast: none) {
+  .key:hover {
+    border: 1px solid rgba(54, 51, 255, 1);
+  }
+}
+
+.key.key-active {
+  background: rgba(54, 51, 255, 1);
+  color: #fff;
 }
 
 #aurafont-controls {
@@ -262,11 +285,119 @@ a[disabled] {
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
   border-radius: 0.5rem;
   background: #d1e2fe;
-  padding: 1rem;
   width: 100%;
   height: 100%;
+}
+
+.aurafont-transformers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 1rem;
+  width: calc(100% - 2rem);
+  height: calc(100% - 2rem);
   overflow: scroll;
   scrollbar-width: none;
+}
+
+.aurafont-transformer-option {
+  cursor: pointer;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 1rem;
+  width: 100%;
+}
+
+.aurafont-transformer-option:not(:last-of-type) {
+  margin-bottom: 0.5rem;
+}
+
+@media (hover: hover), (-ms-high-contrast: none) {
+  .aurafont-transformer-option:not(
+      .aurafont-transformer-option-selected
+    ):hover {
+    border: 1px dotted rgba(54, 51, 255, 1);
+  }
+}
+
+.aurafont-transformer-option.aurafont-transformer-option-selected {
+  border: 1px solid rgba(54, 51, 255, 1);
+}
+
+.aurafont-transformer-option-name {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.aurafont-transformer-option-description {
+  margin-top: 0.4rem;
+  font-size: 1rem;
+}
+
+@keyframes inflation-demo-animation {
+  0% {
+    transform: scale(0.7);
+  }
+  50% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0.7);
+  }
+}
+
+#aurafont-inflation-demo {
+  display: inline-block;
+  transform: scale(0.7);
+  transform-origin: bottom left;
+  animation: inflation-demo-animation 4s ease-in-out infinite;
+  color: red;
+}
+
+#aurafont-interval-colorizer-1 {
+  color: hsl(0, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-2 {
+  margin-left: 0.05rem;
+  color: hsl(20, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-3 {
+  margin-left: 0.1rem;
+  color: hsl(50, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-4 {
+  margin-left: 0.15rem;
+  color: hsl(70, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-5 {
+  margin-left: 0.2rem;
+  color: hsl(80, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-6 {
+  margin-left: 0.25rem;
+  color: hsl(180, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-7 {
+  margin-left: 0.3rem;
+  color: hsl(190, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-8 {
+  margin-left: 0.35rem;
+  color: hsl(200, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-9 {
+  margin-left: 0.4rem;
+  color: hsl(210, 100%, 40%);
 }
 
 /* #aurafont-canvas::before {
