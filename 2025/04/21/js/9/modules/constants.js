@@ -23,7 +23,7 @@ export const CLASS_AURAFONT_TRANSFORMER_OPTION_SELECTED =
   "aurafont-transformer-option-selected";
 
 export const CLASS_CURRENT_GLYPH = "current-glyph";
-export const CLASS_INLINE = "text-inline";
+export const CLASS_TEXT_INLINE = "text-inline";
 export const CLASS_KEY = "key";
 export const CLASS_KEY_ACTIVE = "key-active";
 export const CLASS_PARAGRAPH_BREAK = "text-paragraph-break";

@@ -46,7 +46,7 @@ type EntityBase<Tag extends TagTypes> = {
       endTimestamp: number | null;
       groupPosition: [number, number] | null;
     };
-    element: HTMLDivElement | HTMLSpanElement;
+    element: HTMLDivElement;
 
     getDuration(): number | null;
     transformWith(

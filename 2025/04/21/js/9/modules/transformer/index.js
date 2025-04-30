@@ -4,10 +4,12 @@
 
 import { GlyphInflationTransformer } from "./glyphInflation.js";
 import { GlyphIntervalColorizer } from "./glyphIntervalColorizer.js";
+import { SnakeTransformer } from "./snakeTransformer.js";
 
 const RegistryConst = {
   GlyphInflation: GlyphInflationTransformer,
   GlyphIntervalColorizer: GlyphIntervalColorizer,
+  SnakeTransformer: SnakeTransformer,
 };
 
 /**

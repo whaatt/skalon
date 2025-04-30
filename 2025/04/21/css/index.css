@@ -225,8 +225,10 @@ a[disabled] {
   display: none;
 }
 
-.keyboard-row:first-of-type {
+#aurafont-keyboard-disclaimer {
   margin-top: 0.2rem;
+  font-size: 0.7rem;
+  text-align: center;
 }
 
 .keyboard-row {
@@ -416,7 +418,7 @@ a[disabled] {
 } */
 
 .text-inline {
-  display: inline;
+  display: inline-block;
   word-wrap: break-word;
   /* TODO: Should this be applied by the transformer? */
   transition: font-size 0.1s ease-out;

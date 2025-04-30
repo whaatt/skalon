@@ -7,8 +7,8 @@
  */
 
 import {
-  CLASS_INLINE,
   CLASS_PARAGRAPH_BREAK,
+  CLASS_TEXT_INLINE,
   TERMINATOR_PARAGRAPH,
 } from "./constants.js";
 
@@ -143,7 +143,7 @@ export class Glyph {
     groupPosition: [number, number] | null;
   }} */
   metrics;
-  /** @type {HTMLSpanElement} */
+  /** @type {HTMLDivElement} */
   element;
 
   /**
@@ -157,7 +157,7 @@ export class Glyph {
       groupPosition: null,
     };
     this.element = document.createElement("div");
-    this.element.classList.add(CLASS_INLINE);
+    this.element.classList.add(CLASS_TEXT_INLINE);
     if (character === TERMINATOR_PARAGRAPH) {
       this.element.classList.add(CLASS_PARAGRAPH_BREAK);
       character = "&nbsp;";
@@ -215,7 +215,7 @@ class EntitySequenceGeneric {
   metrics;
   /**
    * @abstract
-   * @type {HTMLElement}
+   * @type {HTMLDivElement}
    */
   element;
 
@@ -232,7 +232,7 @@ class EntitySequenceGeneric {
       pauseBeforeWord: null,
       groupPosition: null,
     };
-    this.element = document.createElement("span");
+    this.element = document.createElement("div");
   }
 
   /**
@@ -371,14 +371,14 @@ const /** @type{`entity-${Lowercase<TagContainer>}`} */ CLASS_ENTITY_CONTAINER =
  * @extends {EntitySequenceGeneric<"Word">}
  */
 class Word extends EntitySequenceGeneric {
-  /** @type {HTMLSpanElement} */
+  /** @type {HTMLDivElement} */
   element;
 
   constructor() {
     super("Word");
     this.element = document.createElement("div");
     this.element.classList.add(CLASS_ENTITY_WORD);
-    this.element.classList.add(CLASS_INLINE);
+    this.element.classList.add(CLASS_TEXT_INLINE);
   }
 }
 
@@ -386,14 +386,14 @@ class Word extends EntitySequenceGeneric {
  * @extends {EntitySequenceGeneric<"Sentence">}
  */
 class Sentence extends EntitySequenceGeneric {
-  /** @type {HTMLSpanElement} */
+  /** @type {HTMLDivElement} */
   element;
 
   constructor() {
     super("Sentence");
     this.element = document.createElement("div");
     this.element.classList.add(CLASS_ENTITY_SENTENCE);
-    this.element.classList.add(CLASS_INLINE);
+    this.element.classList.add(CLASS_TEXT_INLINE);
   }
 }
 
