@@ -338,6 +338,20 @@ a[disabled] {
   font-size: 1rem;
 }
 
+#aurafont-transformer-option-name-snake > span {
+  display: inline-block;
+  transform: translateY(calc(sin(var(--i) * 2 * 3.15 / 5) * 0.25rem));
+  color: green;
+}
+
+#aurafont-transformer-option-name-snake > span:nth-child(3n + 1) {
+  color: darkred;
+}
+
+#aurafont-transformer-option-name-snake > span:nth-child(3n + 2) {
+  color: goldenrod;
+}
+
 @keyframes inflation-demo-animation {
   0% {
     transform: scale(0.7);
