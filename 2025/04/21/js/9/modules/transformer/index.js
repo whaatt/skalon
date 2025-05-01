@@ -23,4 +23,5 @@ export const Registry = RegistryConst;
 export const DEFAULT_TRANSFORMERS = [
   "GlyphInflation",
   "GlyphIntervalColorizer",
+  "SnakeTransformer",
 ];

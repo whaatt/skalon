@@ -165,6 +165,17 @@ export class Glyph {
     this.element.innerHTML = character;
   }
 
+  resetStyle() {
+    this.element = document.createElement("div");
+    this.element.classList.add(CLASS_TEXT_INLINE);
+    let characterValue = this.character;
+    if (this.character === TERMINATOR_PARAGRAPH) {
+      this.element.classList.add(CLASS_PARAGRAPH_BREAK);
+      characterValue = "&nbsp;";
+    }
+    this.element.innerHTML = characterValue;
+  }
+
   /**
    * @returns {number}
    */
@@ -236,6 +247,17 @@ class EntitySequenceGeneric {
   }
 
   /**
+   * @abstract
+   */
+  resetStyle() {
+    this.element.innerHTML = "";
+    this.items.forEach((item) => {
+      item.resetStyle();
+      this.element.appendChild(item.element);
+    });
+  }
+
+  /**
    * @returns {number}
    */
   getDuration() {
@@ -304,6 +326,12 @@ class EntitySequenceGeneric {
       const previousItemSequence = /** @type{EntitySequences} */ (previousItem);
       previousItemSequence.resumeGrouping();
       if (previousItemSequence.removeLastGlyphAndResumeNestedSequences()) {
+        // Remove empty nesting containers even if we found a glyph to remove.
+        if (previousItemSequence.items.length === 0) {
+          this.element.removeChild(previousItemSequence.element);
+          this.items.pop();
+        }
+        this.updateMetrics();
         return true;
       }
 
@@ -380,6 +408,13 @@ class Word extends EntitySequenceGeneric {
     this.element.classList.add(CLASS_ENTITY_WORD);
     this.element.classList.add(CLASS_TEXT_INLINE);
   }
+
+  resetStyle() {
+    this.element = document.createElement("div");
+    this.element.classList.add(CLASS_ENTITY_WORD);
+    this.element.classList.add(CLASS_TEXT_INLINE);
+    super.resetStyle();
+  }
 }
 
 /**
@@ -395,6 +430,13 @@ class Sentence extends EntitySequenceGeneric {
     this.element.classList.add(CLASS_ENTITY_SENTENCE);
     this.element.classList.add(CLASS_TEXT_INLINE);
   }
+
+  resetStyle() {
+    this.element = document.createElement("div");
+    this.element.classList.add(CLASS_ENTITY_SENTENCE);
+    this.element.classList.add(CLASS_TEXT_INLINE);
+    super.resetStyle();
+  }
 }
 
 /**
@@ -409,6 +451,12 @@ class Paragraph extends EntitySequenceGeneric {
     this.element = document.createElement("div");
     this.element.classList.add(CLASS_ENTITY_PARAGRAPH);
   }
+
+  resetStyle() {
+    this.element = document.createElement("div");
+    this.element.classList.add(CLASS_ENTITY_PARAGRAPH);
+    super.resetStyle();
+  }
 }
 
 /**
@@ -422,6 +470,12 @@ class Container extends EntitySequenceGeneric {
     super("Container");
     this.element = containerElement;
     this.element.classList.add(CLASS_ENTITY_CONTAINER);
+  }
+
+  resetStyle() {
+    // Do not recreate the element since we're at the root of the hierarchy.
+    this.element.style.cssText = "";
+    super.resetStyle();
   }
 }
 

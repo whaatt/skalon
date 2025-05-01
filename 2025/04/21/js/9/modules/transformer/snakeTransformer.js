@@ -4,8 +4,11 @@
 
 import { EntityTransformerBase } from "../model.js";
 
-const MOVE_SPEED = 5; // Pixels per frame.
-const PATH_HISTORY_LENGTH = 50; // Number of positions to remember.
+// Pixels per frame.
+const MOVE_SPEED = 10;
+
+// Extra spacing fudge factor when snaking.
+const SPACING_FUDGE_FACTOR = 1.2;
 
 /**
  * Transformer that creates a snake-like movement effect for paragraphs.
@@ -13,14 +16,45 @@ const PATH_HISTORY_LENGTH = 50; // Number of positions to remember.
  * @extends {EntityTransformerBase}
  */
 export class SnakeTransformer extends EntityTransformerBase {
-  /** @private @type {number} */
-  lastHeadIndex = 0;
+  /** @private @type {boolean} */
+  gotMovement = false;
+
+  /** @private @type {number | null} */
+  headIndex = null;
 
   /** @private @type {{
     x: number;
     y: number;
-  }} */
-  headPosition = { x: 0, y: 0 };
+  } | null} */
+  headPosition = null;
+
+  /** @private @type {{ x: number; y: number }[]} */
+  pathHistory = [];
+
+  /** @private @type {Record<number, {
+      segmentStartIndex: number;
+      segmentEndIndex: number;
+      offsetFromHead: number;
+      position: { x: number; y: number };
+  }>} */
+  pathRecordForGlyph = {};
+
+  /** @private @type {Map<import("../model.js").EntitySequence<"Paragraph">, {
+    gotMovement: boolean;
+    headIndex: number | null;
+    headPosition: { x: number; y: number } | null;
+    pathHistory: { x: number; y: number }[];
+    pathRecordForGlyph: Record<number, {
+      segmentStartIndex: number;
+      segmentEndIndex: number;
+      offsetFromHead: number;
+      position: { x: number; y: number };
+    }>;
+  }>} */
+  paragraphStateCache = new Map();
+
+  /** @private @type {import("../model.js").EntitySequence<"Paragraph"> | null} */
+  latestParagraph = null;
 
   /** @private @type {{
     up: boolean;
@@ -34,12 +68,6 @@ export class SnakeTransformer extends EntityTransformerBase {
     left: false,
     right: false,
   };
-
-  /** @private @type {import("../model.js").EntitySequence<"Paragraph"> | null} */
-  latestParagraph = null;
-
-  /** @private @type {{ x: number; y: number }[]} */
-  pathHistory = [{ x: 0, y: 0 }];
 
   constructor() {
     super();
@@ -94,6 +122,9 @@ export class SnakeTransformer extends EntityTransformerBase {
    * @private
    */
   updateHeadPosition() {
+    if (this.headPosition === null) {
+      return;
+    }
     // Update position based on keys
     if (this.keys.up) {
       this.headPosition.y -= MOVE_SPEED;
@@ -107,16 +138,31 @@ export class SnakeTransformer extends EntityTransformerBase {
     if (this.keys.right) {
       this.headPosition.x += MOVE_SPEED;
     }
+    // Skip duplicate path points:
     if (
       this.headPosition.x === this.pathHistory[this.pathHistory.length - 1].x &&
       this.headPosition.y === this.pathHistory[this.pathHistory.length - 1].y
     ) {
       return;
     }
-    this.pathHistory.push({ ...this.headPosition });
-    if (this.pathHistory.length > PATH_HISTORY_LENGTH) {
-      this.pathHistory.shift();
+    // Skip path points that are along the same line as the previous two points:
+    if (this.pathHistory.length > 1) {
+      const lastDx =
+        this.pathHistory[this.pathHistory.length - 1].x -
+        this.pathHistory[this.pathHistory.length - 2].x;
+      const lastDy =
+        this.pathHistory[this.pathHistory.length - 1].y -
+        this.pathHistory[this.pathHistory.length - 2].y;
+      const dx =
+        this.headPosition.x - this.pathHistory[this.pathHistory.length - 1].x;
+      const dy =
+        this.headPosition.y - this.pathHistory[this.pathHistory.length - 1].y;
+      if (dx === lastDx && dy === lastDy) {
+        return;
+      }
     }
+    this.gotMovement = true;
+    this.pathHistory.push({ ...this.headPosition });
   }
 
   /**
@@ -136,15 +182,28 @@ export class SnakeTransformer extends EntityTransformerBase {
   /**
    * @private
    * @param {number} offset Offset along path going backwards from the head.
-   * @returns {{ x: number; y: number }}
+   * @returns {{
+   *   segmentStartIndex: number;
+   *   segmentEndIndex: number;
+   *   offsetFromHead: number;
+   *   position: { x: number; y: number };
+   * }}
    */
-  getPositionAtOffsetBackwardsFromHead(offset) {
+  getPathRecordAtOffsetBackwardsFromHead(offset) {
     // Handle negative distances by projecting with the most recent points:
     if (offset <= 0) {
       if (this.pathHistory.length === 1) {
         // See note below regarding augmentation of the head's path along the
         // X-axis.
-        return { x: -offset, y: 0 };
+        return {
+          segmentStartIndex: 0,
+          segmentEndIndex: 1,
+          offsetFromHead: offset,
+          position: {
+            x: -offset,
+            y: 0,
+          },
+        };
       } else if (this.pathHistory.length > 1) {
         const p1 = this.pathHistory[this.pathHistory.length - 1];
         const p2 = this.pathHistory[this.pathHistory.length - 2];
@@ -152,7 +211,12 @@ export class SnakeTransformer extends EntityTransformerBase {
         const dy = p2.y - p1.y;
         const segmentLength = Math.sqrt(dx * dx + dy * dy);
         const t = offset / segmentLength;
-        return this.interpolate(t, p1, p2);
+        return {
+          segmentStartIndex: this.pathHistory.length - 2,
+          segmentEndIndex: this.pathHistory.length - 1,
+          offsetFromHead: offset,
+          position: this.interpolate(t, p1, p2),
+        };
       }
     }
 
@@ -164,16 +228,28 @@ export class SnakeTransformer extends EntityTransformerBase {
       const dx = p2.x - p1.x;
       const dy = p2.y - p1.y;
       const segmentLength = Math.sqrt(dx * dx + dy * dy);
-      if (accumulatedLength + segmentLength >= offset) {
+      if (accumulatedLength + segmentLength >= offset || i === 1) {
         const t = (offset - accumulatedLength) / segmentLength;
-        return this.interpolate(t, p1, p2);
+        return {
+          segmentStartIndex: i - 1,
+          segmentEndIndex: i,
+          offsetFromHead: offset,
+          position: this.interpolate(t, p1, p2),
+        };
       }
       accumulatedLength += segmentLength;
     }
 
-    // Augment the beginning of the head's path with the tail as a control
-    // point (i.e. the X-axis):
-    return { x: -(offset - accumulatedLength), y: 0 };
+    // Not reachable:
+    return {
+      segmentStartIndex: 0,
+      segmentEndIndex: 1,
+      offsetFromHead: offset,
+      position: {
+        x: -(offset - accumulatedLength),
+        y: 0,
+      },
+    };
   }
 
   /**
@@ -181,14 +257,35 @@ export class SnakeTransformer extends EntityTransformerBase {
    * @param {EntityTransformerContextBase} contextBase
    */
   transformContainer(item, contextBase) {
-    // Update latest paragraph
+    // Update latest paragraph:
     if (item.items.length > 0) {
       const newLatestParagraph = item.items[item.items.length - 1];
       if (newLatestParagraph !== this.latestParagraph) {
-        // Reset state for new paragraph:
-        this.lastHeadIndex = 0;
-        this.headPosition = { x: 0, y: 0 };
-        this.pathHistory = [{ x: 0, y: 0 }];
+        // Save state for old paragraph:
+        if (this.latestParagraph !== null) {
+          this.paragraphStateCache.set(this.latestParagraph, {
+            headIndex: this.headIndex,
+            headPosition: this.headPosition,
+            pathHistory: this.pathHistory,
+            pathRecordForGlyph: this.pathRecordForGlyph,
+            gotMovement: this.gotMovement,
+          });
+        }
+        // Try to retrieve cached state for new paragraph (or reset state):
+        const cachedState = this.paragraphStateCache.get(newLatestParagraph);
+        if (this.paragraphStateCache.has(newLatestParagraph) && cachedState) {
+          this.gotMovement = cachedState.gotMovement;
+          this.headIndex = cachedState.headIndex;
+          this.headPosition = cachedState.headPosition;
+          this.pathHistory = cachedState.pathHistory;
+          this.pathRecordForGlyph = cachedState.pathRecordForGlyph;
+        } else {
+          this.gotMovement = false;
+          this.headIndex = null;
+          this.headPosition = null;
+          this.pathHistory = [];
+          this.pathRecordForGlyph = {};
+        }
         this.latestParagraph = newLatestParagraph;
       }
     }
@@ -197,6 +294,22 @@ export class SnakeTransformer extends EntityTransformerBase {
       item,
       contextBase
     );
+  }
+
+  /**
+   * @private
+   * @param {HTMLElement} element
+   * @param {HTMLElement} headElement
+   * @returns {{ x: number; y: number }}
+   */
+  getDeltaFromHeadReferenceFrame(element, headElement) {
+    return {
+      x: headElement.offsetLeft - element.offsetLeft,
+      y:
+        headElement.offsetTop +
+        headElement.getBoundingClientRect().height -
+        (element.offsetTop + element.getBoundingClientRect().height),
+    };
   }
 
   /**
@@ -212,58 +325,106 @@ export class SnakeTransformer extends EntityTransformerBase {
     const glyphs = item.items.flatMap((sentence) =>
       sentence.items.flatMap((word) => word.items)
     );
-    console.log(glyphs);
     if (glyphs.length === 0) {
       return;
     }
 
-    // TODO: Save glyph translated positions so we can handle deletion of a head.
-
-    // Calculate cumulative offsets from the head for each glyph (note that this
-    // does not include the width of the head). Note also that the number of
-    // glyphs may have changed, so some glyphs will have a negative offset with
-    // respect to the head (used for getting position at some offset from the
-    // head):
-    let cumulativeWidth = 0;
-    /** @type {number[]} */
-    const glyphOffsetsFromHead = Array(glyphs.length).fill(0);
-    for (let i = this.lastHeadIndex - 1; i >= 0; i--) {
-      cumulativeWidth += glyphs[i].element.getBoundingClientRect().width;
-      glyphOffsetsFromHead[i] = cumulativeWidth;
+    // Handle deletion of an existing head:
+    if (this.headIndex !== null && glyphs.length - 1 < this.headIndex) {
+      this.headIndex = glyphs.length - 1;
+      const { position, segmentEndIndex, offsetFromHead } =
+        this.pathRecordForGlyph[this.headIndex];
+      this.headPosition = { ...position };
+      this.pathHistory[segmentEndIndex] = {
+        ...this.headPosition,
+      };
+      // Transform everything into the reference frame of the new head's initial
+      // position:
+      this.headPosition.x += offsetFromHead;
+      this.pathHistory.forEach((point) => {
+        point.x += offsetFromHead;
+      });
+      // Prune path history from deleted glyphs:
+      this.pathHistory = this.pathHistory.slice(0, segmentEndIndex + 1);
     }
-    cumulativeWidth = 0;
-    for (let i = this.lastHeadIndex + 1; i < glyphs.length; i++) {
-      cumulativeWidth -= glyphs[i - 1].element.getBoundingClientRect().width;
-      glyphOffsetsFromHead[i] = cumulativeWidth;
+
+    // Update head position and path history based on keys (or initialize them):
+    if (this.headPosition === null || this.headIndex === null) {
+      this.headIndex = glyphs.length - 1;
+      this.headPosition = { x: 0, y: 0 };
+      this.pathHistory.push({ ...this.headPosition });
+    } else {
+      this.updateHeadPosition();
     }
 
-    // Update head position and path history based on keys:
-    this.updateHeadPosition();
+    // Calculate cumulative distances from the head to each glyph (assuming no
+    // line wrapping and traveling towards the tail as the positive direction):
+    let cumulativeDistance = 0;
+    const pathOffsetsFromHead = Array(glyphs.length).fill(0);
+    // From head to tail:
+    for (let i = this.headIndex - 1; i >= 0; i--) {
+      const element = glyphs[i].element;
+      cumulativeDistance +=
+        element.getBoundingClientRect().width * SPACING_FUDGE_FACTOR;
+      pathOffsetsFromHead[i] = cumulativeDistance;
+    }
+    cumulativeDistance = 0;
+    // From head to potential new head:
+    for (let i = this.headIndex; i < glyphs.length; i++) {
+      pathOffsetsFromHead[i] = cumulativeDistance;
+      const element = glyphs[i].element;
+      cumulativeDistance -=
+        element.getBoundingClientRect().width * SPACING_FUDGE_FACTOR;
+    }
 
-    // Apply transforms to each glyph:
+    // Apply CSS translation to each glyph based on its path position:
+    let minSegmentStartIndex = this.pathHistory.length - 1;
+    this.pathRecordForGlyph = {};
     glyphs.forEach((glyph, index) => {
       const element = glyph.element;
-      const offsetFromHead = glyphOffsetsFromHead[index];
+      const offsetFromHead = pathOffsetsFromHead[index];
+      const delta = this.getDeltaFromHeadReferenceFrame(
+        element,
+        glyphs[this.headIndex ?? 0].element
+      );
 
       // Compute path position offset from the head (driver of the path):
-      const position =
-        this.getPositionAtOffsetBackwardsFromHead(offsetFromHead);
+      this.pathRecordForGlyph[index] =
+        this.getPathRecordAtOffsetBackwardsFromHead(offsetFromHead);
+      const { position, segmentStartIndex } = this.pathRecordForGlyph[index];
+      minSegmentStartIndex = Math.min(minSegmentStartIndex, segmentStartIndex);
+
+      // Don't translate anything until we have actual movement of the head:
+      if (!this.gotMovement) {
+        return;
+      }
 
       // Apply translation, subtracting the glyph's offset from the tail since
       // we treat the tail as the origin of the path (and reference point for
       // all relative distance calculations involving the path):
-      element.style.transform = `translate(${position.x + offsetFromHead}px, ${
-        position.y
+      element.style.transform = `translate(${position.x + delta.x}px, ${
+        position.y + delta.y
       }px)`;
     });
 
     // Handle creation of a new head:
-    if (glyphOffsetsFromHead[glyphOffsetsFromHead.length - 1] < 0) {
-      this.lastHeadIndex = glyphs.length - 1;
-      this.headPosition = this.getPositionAtOffsetBackwardsFromHead(
-        glyphOffsetsFromHead[glyphs.length - 1]
-      );
-      this.pathHistory[this.pathHistory.length - 1] = { ...this.headPosition };
+    if (pathOffsetsFromHead[pathOffsetsFromHead.length - 1] < 0) {
+      this.headIndex = glyphs.length - 1;
+      const { position, offsetFromHead } =
+        this.pathRecordForGlyph[this.headIndex];
+      this.headPosition = { ...position };
+      this.pathHistory.push({
+        ...this.headPosition,
+      });
+      // Transform everything into the reference frame of the new head's initial
+      // position:
+      this.headPosition.x += offsetFromHead;
+      this.pathHistory.forEach((point) => {
+        point.x += offsetFromHead;
+      });
     }
+
+    // Prune unused path history:
+    this.pathHistory = this.pathHistory.slice(minSegmentStartIndex);
   }
 }

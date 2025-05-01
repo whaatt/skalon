@@ -48,6 +48,7 @@ type EntityBase<Tag extends TagTypes> = {
     };
     element: HTMLDivElement;
 
+    resetStyle(): void;
     getDuration(): number | null;
     transformWith(
       transformer: EntityTransformer,

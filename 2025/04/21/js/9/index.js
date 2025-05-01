@@ -186,6 +186,15 @@ const syncControlPanelState = (
   /** @type{boolean} */ isInitialSync
 ) => {
   card.classList.toggle(CLASS_AURAFONT_CARD_FLIPPED, isControlPanelVisible);
+  localStorage.setItem(
+    STORAGE_KEY_CONTROL_PANEL_VISIBLE,
+    isControlPanelVisible ? "true" : "false"
+  );
+  if (isControlPanelVisible) {
+    manager.stopAnimation();
+  } else {
+    manager.startAnimation();
+  }
   const syncControlsButtonContent = () => {
     controlsButton.classList.toggle(
       CLASS_AURAFONT_CONTROLS_BUTTON_ACTIVE,
@@ -203,10 +212,6 @@ const syncControlPanelState = (
       () => {
         controlsButton.classList.remove(CLASS_AURAFONT_CONTROLS_BUTTON_CLICKED);
         syncControlsButtonContent();
-        localStorage.setItem(
-          STORAGE_KEY_CONTROL_PANEL_VISIBLE,
-          isControlPanelVisible ? "true" : "false"
-        );
       },
       { once: true }
     );
@@ -233,6 +238,17 @@ const syncKeyboardState = (/** @type{boolean} */ isKeyboardVisible) => {
     STORAGE_KEY_KEYBOARD_VISIBLE,
     isKeyboardVisible ? "true" : "false"
   );
+  if (isKeyboardVisible) {
+    document.body.style.userSelect = "none";
+    document.body.style.webkitUserSelect = "none";
+    // @ts-ignore
+    document.body.style.msUserSelect = "none";
+  } else {
+    document.body.style.userSelect = "auto";
+    document.body.style.webkitUserSelect = "auto";
+    // @ts-ignore
+    document.body.style.msUserSelect = "auto";
+  }
 };
 
 // Initial keyboard state sync:
@@ -277,11 +293,9 @@ Array.from(
   document.getElementsByClassName(CLASS_AURAFONT_TRANSFORMER_OPTION)
 ).forEach((option) => {
   option.addEventListener("click", () => {
-    const newSelectedTransformers = (selectedTransformers =
-      selectedTransformers.filter(
-        (name) =>
-          name !== option.getAttribute(ATTRIBUTE_DATA_TRANSFORMER_OPTION)
-      ));
+    const newSelectedTransformers = selectedTransformers.filter(
+      (name) => name !== option.getAttribute(ATTRIBUTE_DATA_TRANSFORMER_OPTION)
+    );
     if (
       !option.classList.contains(CLASS_AURAFONT_TRANSFORMER_OPTION_SELECTED)
     ) {
@@ -290,6 +304,14 @@ Array.from(
           option.getAttribute(ATTRIBUTE_DATA_TRANSFORMER_OPTION)
         )
       );
+    }
+    if (
+      JSON.stringify(selectedTransformers) !==
+      JSON.stringify(newSelectedTransformers)
+    ) {
+      // Re-apply transformer styles from a blank slate after changing which
+      // ones are active:
+      manager.resetStyle();
     }
     selectedTransformers = newSelectedTransformers;
     // Yes; I'm re-creating React semantics here (event on element updates the

@@ -255,4 +255,9 @@ export class EntityManager {
   stopAnimation() {
     this.isAnimating = false;
   }
+
+  resetStyle() {
+    this.current.container.resetStyle();
+    this.ensureCursor();
+  }
 }
