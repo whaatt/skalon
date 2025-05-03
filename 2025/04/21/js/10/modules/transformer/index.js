@@ -2,6 +2,7 @@
  * @typedef {import("../typings.js").EntityTransformer} EntityTransformer
  */
 
+import { EmojiTransformer } from "./emojiTransformer.js";
 import { GlyphInflationTransformer } from "./glyphInflation.js";
 import { GlyphIntervalColorizer } from "./glyphIntervalColorizer.js";
 import { SnakeTransformer } from "./snakeTransformer.js";
@@ -10,6 +11,7 @@ const RegistryConst = {
   GlyphInflation: GlyphInflationTransformer,
   GlyphIntervalColorizer: GlyphIntervalColorizer,
   SnakeTransformer: SnakeTransformer,
+  EmojiTransformer: EmojiTransformer,
 };
 
 /**
@@ -25,3 +27,9 @@ export const DEFAULT_TRANSFORMERS = [
   "GlyphIntervalColorizer",
   "SnakeTransformer",
 ];
+
+export const DEFAULT_COMPLETIONS_CONFIG = {
+  baseUrl: "https://api.openai.com/v1",
+  model: "gpt-3.5-turbo",
+  apiKey: "",
+};

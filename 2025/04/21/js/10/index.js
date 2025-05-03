@@ -5,6 +5,7 @@ import {
   ATTRIBUTE_DATA_KEY,
   ATTRIBUTE_DATA_KEY_VALUE_ENTER,
   ATTRIBUTE_DATA_TRANSFORMER_OPTION,
+  ATTRIBUTE_DATA_TRANSFORMER_OPTION_VALUE_EMOJI,
   BUTTON_CONTROLS_SYMBOL_CANVAS,
   BUTTON_CONTROLS_SYMBOL_CONTROLS,
   CLASS_AURAFONT_CARD_FLIPPED,
@@ -13,15 +14,20 @@ import {
   CLASS_AURAFONT_KEYBOARD_BUTTON_ACTIVE,
   CLASS_AURAFONT_KEYBOARD_HIDDEN,
   CLASS_AURAFONT_TRANSFORMER_OPTION,
+  CLASS_AURAFONT_TRANSFORMER_OPTION_NOT_CONFIGURED,
   CLASS_AURAFONT_TRANSFORMER_OPTION_SELECTED,
   CLASS_KEY,
   CLASS_KEY_ACTIVE,
   ELEMENT_ID_AURAFONT_CAPTURE,
   ELEMENT_ID_AURAFONT_CARD,
+  ELEMENT_ID_AURAFONT_COMPLETIONS_CONFIG_BUTTON,
   ELEMENT_ID_AURAFONT_CONTROLS_BUTTON,
   ELEMENT_ID_AURAFONT_KEYBOARD,
   ELEMENT_ID_AURAFONT_KEYBOARD_BUTTON,
   ELEMENT_ID_AURAFONT_MANAGER,
+  LABEL_API_CONFIGURED,
+  LABEL_CONFIGURE_API,
+  STORAGE_KEY_COMPLETIONS_CONFIG,
   STORAGE_KEY_CONTROL_PANEL_VISIBLE,
   STORAGE_KEY_KEYBOARD_VISIBLE,
   STORAGE_KEY_SELECTED_TRANSFORMERS,
@@ -29,7 +35,12 @@ import {
 } from "./modules/constants.js";
 import { EntityManager } from "./modules/manager.js";
 import { Glyph } from "./modules/model.js";
-import { DEFAULT_TRANSFORMERS, Registry } from "./modules/transformer/index.js";
+import { EmojiTransformer } from "./modules/transformer/emojiTransformer.js";
+import {
+  DEFAULT_COMPLETIONS_CONFIG,
+  DEFAULT_TRANSFORMERS,
+  Registry,
+} from "./modules/transformer/index.js";
 
 /**
  * Determines if the device has touch support.
@@ -62,6 +73,14 @@ const keyboardButton = /** @type{HTMLSpanElement} */ (
 const keyboard = /** @type{HTMLDivElement} */ (
   document.getElementById(ELEMENT_ID_AURAFONT_KEYBOARD)
 );
+const emojiTransformerOption = /** @type{HTMLDivElement} */ (
+  document.querySelector(
+    `[${ATTRIBUTE_DATA_TRANSFORMER_OPTION}="${ATTRIBUTE_DATA_TRANSFORMER_OPTION_VALUE_EMOJI}"]`
+  )
+);
+const completionsConfigButton = /** @type{HTMLDivElement} */ (
+  document.getElementById(ELEMENT_ID_AURAFONT_COMPLETIONS_CONFIG_BUTTON)
+);
 
 const /** @type{Record<string, number>} */ keysDown = {};
 const /** @type{Record<string, Glyph>} */ glyphForKeyDown = {};
@@ -86,6 +105,9 @@ let /** @type{boolean} */ isControlPanelVisible =
 let /** @type{Array<keyof typeof Registry>} */ selectedTransformers =
     safeParse(localStorage.getItem(STORAGE_KEY_SELECTED_TRANSFORMERS)) ||
     DEFAULT_TRANSFORMERS;
+let /** @type{typeof DEFAULT_COMPLETIONS_CONFIG} */ completionsConfig =
+    safeParse(localStorage.getItem(STORAGE_KEY_COMPLETIONS_CONFIG)) ||
+    DEFAULT_COMPLETIONS_CONFIG;
 
 // Initialize the rendering manager with a root container element:
 const manager = new EntityManager(canvas);
@@ -264,7 +286,17 @@ const syncTransformerSelectionState = (
   /** @type{Array<keyof typeof Registry>} */ selectedTransformers
 ) => {
   manager.syncTransformers(
-    selectedTransformers.map((name) => new Registry[name]())
+    selectedTransformers.map((name) => {
+      const transformer = new Registry[name]();
+      if (transformer instanceof EmojiTransformer) {
+        transformer.setCompletionsConfig(
+          completionsConfig.baseUrl,
+          completionsConfig.model,
+          completionsConfig.apiKey
+        );
+      }
+      return transformer;
+    })
   );
   Array.from(
     document.getElementsByClassName(CLASS_AURAFONT_TRANSFORMER_OPTION)
@@ -297,7 +329,10 @@ Array.from(
       (name) => name !== option.getAttribute(ATTRIBUTE_DATA_TRANSFORMER_OPTION)
     );
     if (
-      !option.classList.contains(CLASS_AURAFONT_TRANSFORMER_OPTION_SELECTED)
+      !option.classList.contains(CLASS_AURAFONT_TRANSFORMER_OPTION_SELECTED) &&
+      !option.classList.contains(
+        CLASS_AURAFONT_TRANSFORMER_OPTION_NOT_CONFIGURED
+      )
     ) {
       newSelectedTransformers.push(
         /** @type{keyof typeof Registry} */ (
@@ -317,6 +352,73 @@ Array.from(
     // Yes; I'm re-creating React semantics here (event on element updates the
     // state, which in turn updates the UI).
     syncTransformerSelectionState(selectedTransformers);
+  });
+});
+
+const syncEmojiTransformerOption = () => {
+  const isConfigured = Object.values(completionsConfig).every((value) => value);
+  completionsConfigButton.innerHTML = isConfigured
+    ? LABEL_API_CONFIGURED
+    : LABEL_CONFIGURE_API;
+
+  emojiTransformerOption.classList.toggle(
+    CLASS_AURAFONT_TRANSFORMER_OPTION_NOT_CONFIGURED,
+    !isConfigured
+  );
+};
+
+// Initial emoji transformer option state sync:
+syncEmojiTransformerOption();
+
+// Emoji transformer completions config button handler:
+completionsConfigButton.addEventListener("click", () => {
+  const currentConfig = completionsConfig;
+  const newBaseUrl = window.prompt(
+    "Enter completions API Base URL (or hit OK to keep current):",
+    currentConfig.baseUrl
+  );
+  if (!newBaseUrl) {
+    return;
+  }
+  const newModel = window.prompt(
+    "Enter completions Model (or hit OK to keep current):",
+    currentConfig.model
+  );
+  if (!newModel) {
+    return;
+  }
+  const newApiKey = window.prompt(
+    "Enter completions API Key (or hit OK to keep current; use an empty value to clear):",
+    currentConfig.apiKey ? "********" : ""
+  );
+  if (newApiKey === null) {
+    return;
+  }
+  completionsConfig = {
+    baseUrl: newBaseUrl || currentConfig.baseUrl,
+    model: newModel || currentConfig.model,
+    apiKey:
+      newApiKey === ""
+        ? ""
+        : newApiKey === "********"
+        ? currentConfig.apiKey
+        : newApiKey,
+  };
+
+  syncEmojiTransformerOption();
+  localStorage.setItem(
+    STORAGE_KEY_COMPLETIONS_CONFIG,
+    JSON.stringify(completionsConfig)
+  );
+  selectedTransformers.forEach((name) => {
+    const transformer = new Registry[name]();
+    if (transformer instanceof EmojiTransformer) {
+      transformer.setCompletionsConfig(
+        completionsConfig.baseUrl,
+        completionsConfig.model,
+        completionsConfig.apiKey
+      );
+    }
   });
 });
 

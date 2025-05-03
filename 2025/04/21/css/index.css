@@ -318,14 +318,27 @@ a[disabled] {
 
 @media (hover: hover), (-ms-high-contrast: none) {
   .aurafont-transformer-option:not(
-      .aurafont-transformer-option-selected
+      .aurafont-transformer-option-selected,
+      .aurafont-transformer-option-not-configured
     ):hover {
     border: 1px dotted rgba(54, 51, 255, 1);
   }
 }
 
-.aurafont-transformer-option.aurafont-transformer-option-selected {
+.aurafont-transformer-option.aurafont-transformer-option-selected:not(
+    .aurafont-transformer-option-not-configured
+  ) {
   border: 1px solid rgba(54, 51, 255, 1);
+}
+
+.aurafont-transformer-option.aurafont-transformer-option-not-configured {
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.aurafont-transformer-option-header {
+  display: flex;
+  justify-content: space-between;
 }
 
 .aurafont-transformer-option-name {
@@ -338,9 +351,36 @@ a[disabled] {
   font-size: 1rem;
 }
 
+.aurafont-transformer-option-button {
+  transition: background-color 0.2s;
+  cursor: pointer;
+  border-radius: min(0.5rem, 0.67vw);
+  background: #000;
+  padding: 0.4rem;
+  color: #fff;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.aurafont-transformer-option-button:hover {
+  box-shadow: 0 0 0.5rem rgba(54, 51, 255, 1);
+}
+
+@keyframes snake-animation {
+  0% {
+    transform: translateY(calc(sin(var(--i) * 2 * 3.15 / 5) * 0.25rem * 2));
+  }
+  50% {
+    transform: translateY(calc(sin(var(--i) * 2 * 3.15 / 5) * 0.25rem * -2));
+  }
+  100% {
+    transform: translateY(calc(sin(var(--i) * 2 * 3.15 / 5) * 0.25rem * 2));
+  }
+}
+
 #aurafont-transformer-option-name-snake > span {
   display: inline-block;
-  transform: translateY(calc(sin(var(--i) * 2 * 3.15 / 5) * 0.25rem));
+  animation: snake-animation 3s ease-in-out infinite;
   color: green;
 }
 
@@ -455,6 +495,12 @@ a[disabled] {
   animation: cursor-blink 1s ease-in-out infinite;
   background: brown;
   content: "\00a0";
+}
+
+.emoji {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.1rem;
 }
 
 #navigation {

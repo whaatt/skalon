@@ -71,7 +71,7 @@
                 data-transformer-option="GlyphInflation"
               >
                 <div class="aurafont-transformer-option-name">
-                  Glyph <span id="aurafont-inflation-demo">Inflater</span>
+                  Glyph&nbsp;<span id="aurafont-inflation-demo">Inflater</span>
                 </div>
                 <div class="aurafont-transformer-option-description">
                   Hold keys longer to make words larger.
@@ -81,17 +81,19 @@
                 class="aurafont-transformer-option"
                 data-transformer-option="GlyphIntervalColorizer"
               >
-                <div class="aurafont-transformer-option-name">
-                  Interval
-                  <span id="aurafont-interval-colorizer-1">C</span
-                  ><span id="aurafont-interval-colorizer-2">o</span
-                  ><span id="aurafont-interval-colorizer-3">l</span
-                  ><span id="aurafont-interval-colorizer-4">o</span
-                  ><span id="aurafont-interval-colorizer-5">r</span
-                  ><span id="aurafont-interval-colorizer-6">i</span
-                  ><span id="aurafont-interval-colorizer-7">z</span
-                  ><span id="aurafont-interval-colorizer-8">e</span
-                  ><span id="aurafont-interval-colorizer-9">r</span>
+                <div class="aurafont-transformer-option-header">
+                  <div class="aurafont-transformer-option-name">
+                    Interval&nbsp;
+                    <span id="aurafont-interval-colorizer-1">C</span
+                    ><span id="aurafont-interval-colorizer-2">o</span
+                    ><span id="aurafont-interval-colorizer-3">l</span
+                    ><span id="aurafont-interval-colorizer-4">o</span
+                    ><span id="aurafont-interval-colorizer-5">r</span
+                    ><span id="aurafont-interval-colorizer-6">i</span
+                    ><span id="aurafont-interval-colorizer-7">z</span
+                    ><span id="aurafont-interval-colorizer-8">e</span
+                    ><span id="aurafont-interval-colorizer-9">r</span>
+                  </div>
                 </div>
                 <div class="aurafont-transformer-option-description">
                   Type faster for warmer tones and type slower for cooler tones.
@@ -101,23 +103,44 @@
                 class="aurafont-transformer-option"
                 data-transformer-option="SnakeTransformer"
               >
-                <div
-                  class="aurafont-transformer-option-name"
-                  id="aurafont-transformer-option-name-snake"
-                >
-                  <span style="--i: 0">S</span><span style="--i: 1">n</span
-                  ><span style="--i: 2">a</span><span style="--i: 3">k</span
-                  ><span style="--i: 4">e</span
-                  ><span style="--i: 5">&nbsp;</span
-                  ><span style="--i: 6">T</span><span style="--i: 7">r</span
-                  ><span style="--i: 8">a</span><span style="--i: 9">n</span
-                  ><span style="--i: 10">s</span><span style="--i: 11">f</span
-                  ><span style="--i: 12">o</span><span style="--i: 13">r</span
-                  ><span style="--i: 14">m</span><span style="--i: 15">e</span
-                  ><span style="--i: 16">r</span>
+                <div class="aurafont-transformer-option-header">
+                  <div
+                    class="aurafont-transformer-option-name"
+                    id="aurafont-transformer-option-name-snake"
+                  >
+                    <span style="--i: 0">S</span><span style="--i: 1">n</span
+                    ><span style="--i: 2">a</span><span style="--i: 3">k</span
+                    ><span style="--i: 4">e</span
+                    ><span style="--i: 5">&nbsp;</span
+                    ><span style="--i: 6">T</span><span style="--i: 7">r</span
+                    ><span style="--i: 8">a</span><span style="--i: 9">n</span
+                    ><span style="--i: 10">s</span><span style="--i: 11">f</span
+                    ><span style="--i: 12">o</span><span style="--i: 13">r</span
+                    ><span style="--i: 14">m</span><span style="--i: 15">e</span
+                    ><span style="--i: 16">r</span>
+                  </div>
                 </div>
                 <div class="aurafont-transformer-option-description">
                   Use arrow keys to move and rotate text.
+                </div>
+              </div>
+              <div
+                class="aurafont-transformer-option aurafont-transformer-option-not-configured"
+                data-transformer-option="EmojiTransformer"
+              >
+                <div class="aurafont-transformer-option-header">
+                  <div class="aurafont-transformer-option-name">
+                    Vibe 🔊 Checker
+                  </div>
+                  <div
+                    id="aurafont-completions-config-button"
+                    class="aurafont-button aurafont-transformer-option-button"
+                  >
+                    Configure API
+                  </div>
+                </div>
+                <div class="aurafont-transformer-option-description">
+                  Tighten up your message with AI.
                 </div>
               </div>
             </div>
@@ -178,6 +201,7 @@
       <div id="published">21 April 2025</div>
     </div>
     <!-- Vendor scripts go here. -->
+    <script src="https://cdn.jsdelivr.net/npm/openai@4.28.0/browser/openai.js"></script>
     <script src="js/10/index.js" type="module"></script>
   </body>
 </html>

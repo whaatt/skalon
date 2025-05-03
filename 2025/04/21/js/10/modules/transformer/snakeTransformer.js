@@ -13,6 +13,8 @@ const SPACING_FUDGE_FACTOR = 1.2;
 /**
  * Transformer that creates a snake-like movement effect for paragraphs.
  *
+ * Co-authored by AI, but required a lot of manual tweaking to get just right.
+ *
  * @extends {EntityTransformerBase}
  */
 export class SnakeTransformer extends EntityTransformerBase {
