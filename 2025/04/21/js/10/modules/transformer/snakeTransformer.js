@@ -7,8 +7,9 @@ import { EntityTransformerBase } from "../model.js";
 // Pixels per frame.
 const MOVE_SPEED = 10;
 
-// Extra spacing fudge factor when snaking.
-const SPACING_FUDGE_FACTOR = 1.2;
+// Spacing fudge factor (a perturbation of font size to make things look nicer
+// for most texts).
+const SPACING_FUDGE_FACTOR = 0.7;
 
 /**
  * Transformer that creates a snake-like movement effect for paragraphs.
@@ -33,11 +34,15 @@ export class SnakeTransformer extends EntityTransformerBase {
   /** @private @type {{ x: number; y: number }[]} */
   pathHistory = [];
 
+  /** @private @type {Map<HTMLElement, number>} */
+  lastRotationForGlyph = new Map();
+
   /** @private @type {Record<number, {
       segmentStartIndex: number;
       segmentEndIndex: number;
       offsetFromHead: number;
       position: { x: number; y: number };
+      rotation: number;
   }>} */
   pathRecordForGlyph = {};
 
@@ -46,11 +51,13 @@ export class SnakeTransformer extends EntityTransformerBase {
     headIndex: number | null;
     headPosition: { x: number; y: number } | null;
     pathHistory: { x: number; y: number }[];
+    lastRotationForGlyph: Map<HTMLElement, number>;
     pathRecordForGlyph: Record<number, {
       segmentStartIndex: number;
       segmentEndIndex: number;
       offsetFromHead: number;
       position: { x: number; y: number };
+      rotation: number;
     }>;
   }>} */
   paragraphStateCache = new Map();
@@ -189,6 +196,7 @@ export class SnakeTransformer extends EntityTransformerBase {
    *   segmentEndIndex: number;
    *   offsetFromHead: number;
    *   position: { x: number; y: number };
+   *   rotation: number;
    * }}
    */
   getPathRecordAtOffsetBackwardsFromHead(offset) {
@@ -205,6 +213,7 @@ export class SnakeTransformer extends EntityTransformerBase {
             x: -offset,
             y: 0,
           },
+          rotation: 0,
         };
       } else if (this.pathHistory.length > 1) {
         const p1 = this.pathHistory[this.pathHistory.length - 1];
@@ -212,12 +221,17 @@ export class SnakeTransformer extends EntityTransformerBase {
         const dx = p2.x - p1.x;
         const dy = p2.y - p1.y;
         const segmentLength = Math.sqrt(dx * dx + dy * dy);
-        const t = offset / segmentLength;
+        if (segmentLength === 0) {
+          console.log("Got zero segment length:", p1, p2);
+        }
+        // TODO: Understand exactly when `segmentLength` is 0.
+        const t = offset / segmentLength || 0;
         return {
           segmentStartIndex: this.pathHistory.length - 2,
           segmentEndIndex: this.pathHistory.length - 1,
           offsetFromHead: offset,
           position: this.interpolate(t, p1, p2),
+          rotation: Math.atan2(-dy, -dx),
         };
       }
     }
@@ -230,13 +244,18 @@ export class SnakeTransformer extends EntityTransformerBase {
       const dx = p2.x - p1.x;
       const dy = p2.y - p1.y;
       const segmentLength = Math.sqrt(dx * dx + dy * dy);
+      if (segmentLength === 0) {
+        console.log("Got zero segment length:", p1, p2);
+      }
       if (accumulatedLength + segmentLength >= offset || i === 1) {
-        const t = (offset - accumulatedLength) / segmentLength;
+        // TODO: Understand exactly when `segmentLength` is 0.
+        const t = (offset - accumulatedLength) / segmentLength || 0;
         return {
           segmentStartIndex: i - 1,
           segmentEndIndex: i,
           offsetFromHead: offset,
           position: this.interpolate(t, p1, p2),
+          rotation: Math.atan2(-dy, -dx),
         };
       }
       accumulatedLength += segmentLength;
@@ -251,6 +270,7 @@ export class SnakeTransformer extends EntityTransformerBase {
         x: -(offset - accumulatedLength),
         y: 0,
       },
+      rotation: 0,
     };
   }
 
@@ -266,11 +286,12 @@ export class SnakeTransformer extends EntityTransformerBase {
         // Save state for old paragraph:
         if (this.latestParagraph !== null) {
           this.paragraphStateCache.set(this.latestParagraph, {
+            gotMovement: this.gotMovement,
             headIndex: this.headIndex,
             headPosition: this.headPosition,
             pathHistory: this.pathHistory,
             pathRecordForGlyph: this.pathRecordForGlyph,
-            gotMovement: this.gotMovement,
+            lastRotationForGlyph: this.lastRotationForGlyph,
           });
         }
         // Try to retrieve cached state for new paragraph (or reset state):
@@ -280,6 +301,7 @@ export class SnakeTransformer extends EntityTransformerBase {
           this.headIndex = cachedState.headIndex;
           this.headPosition = cachedState.headPosition;
           this.pathHistory = cachedState.pathHistory;
+          this.lastRotationForGlyph = cachedState.lastRotationForGlyph;
           this.pathRecordForGlyph = cachedState.pathRecordForGlyph;
         } else {
           this.gotMovement = false;
@@ -287,6 +309,7 @@ export class SnakeTransformer extends EntityTransformerBase {
           this.headPosition = null;
           this.pathHistory = [];
           this.pathRecordForGlyph = {};
+          this.lastRotationForGlyph = new Map();
         }
         this.latestParagraph = newLatestParagraph;
       }
@@ -306,11 +329,14 @@ export class SnakeTransformer extends EntityTransformerBase {
    */
   getDeltaFromHeadReferenceFrame(element, headElement) {
     return {
-      x: headElement.offsetLeft - element.offsetLeft,
+      x:
+        headElement.offsetLeft +
+        headElement.getBoundingClientRect().width / 2 -
+        (element.offsetLeft + element.getBoundingClientRect().width / 2),
       y:
         headElement.offsetTop +
-        headElement.getBoundingClientRect().height -
-        (element.offsetTop + element.getBoundingClientRect().height),
+        headElement.getBoundingClientRect().height / 2 -
+        (element.offsetTop + element.getBoundingClientRect().height / 2),
     };
   }
 
@@ -361,22 +387,25 @@ export class SnakeTransformer extends EntityTransformerBase {
 
     // Calculate cumulative distances from the head to each glyph (assuming no
     // line wrapping and traveling towards the tail as the positive direction):
-    let cumulativeDistance = 0;
     const pathOffsetsFromHead = Array(glyphs.length).fill(0);
+    const maxWidth = Math.max(
+      ...glyphs.map((glyph) => glyph.element.getBoundingClientRect().width)
+    );
+    let cumulativeDistance = 0;
     // From head to tail:
     for (let i = this.headIndex - 1; i >= 0; i--) {
-      const element = glyphs[i].element;
-      cumulativeDistance +=
-        element.getBoundingClientRect().width * SPACING_FUDGE_FACTOR;
+      // const element = glyphs[i].element;
+      // Use the max width (rather than each element's width) to provide a more
+      // consistent spacing between glyphs:
+      cumulativeDistance += maxWidth * SPACING_FUDGE_FACTOR;
       pathOffsetsFromHead[i] = cumulativeDistance;
     }
     cumulativeDistance = 0;
     // From head to potential new head:
     for (let i = this.headIndex; i < glyphs.length; i++) {
       pathOffsetsFromHead[i] = cumulativeDistance;
-      const element = glyphs[i].element;
-      cumulativeDistance -=
-        element.getBoundingClientRect().width * SPACING_FUDGE_FACTOR;
+      // const element = glyphs[i].element;
+      cumulativeDistance -= maxWidth * SPACING_FUDGE_FACTOR;
     }
 
     // Apply CSS translation to each glyph based on its path position:

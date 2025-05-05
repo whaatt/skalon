@@ -8,7 +8,9 @@
 
 import {
   CLASS_PARAGRAPH_BREAK,
-  CLASS_TEXT_INLINE,
+  CLASS_TEXT_GLYPH,
+  CLASS_TEXT_INLINE_WRAPPER,
+  CLASS_TEXT_WORD,
   TERMINATOR_PARAGRAPH,
 } from "./constants.js";
 
@@ -149,15 +151,16 @@ export class Glyph {
   /**
    * @param {string} character
    */
-  constructor(character) {
+  constructor(character, shouldIgnoreForMetrics = false) {
     this.character = character;
+    this.shouldIgnoreForMetrics = shouldIgnoreForMetrics;
     this.metrics = {
       startTimestamp: Date.now(),
       endTimestamp: null,
       groupPosition: null,
     };
     this.element = document.createElement("div");
-    this.element.classList.add(CLASS_TEXT_INLINE);
+    this.element.classList.add(CLASS_TEXT_GLYPH);
     if (character === TERMINATOR_PARAGRAPH) {
       this.element.classList.add(CLASS_PARAGRAPH_BREAK);
       character = "&nbsp;";
@@ -167,7 +170,7 @@ export class Glyph {
 
   resetStyle() {
     this.element = document.createElement("div");
-    this.element.classList.add(CLASS_TEXT_INLINE);
+    this.element.classList.add(CLASS_TEXT_GLYPH);
     let characterValue = this.character;
     if (this.character === TERMINATOR_PARAGRAPH) {
       this.element.classList.add(CLASS_PARAGRAPH_BREAK);
@@ -189,6 +192,10 @@ export class Glyph {
     }
 
     return this.metrics.endTimestamp - this.metrics.startTimestamp;
+  }
+
+  getInProgress() {
+    return this.metrics.endTimestamp === null;
   }
 
   release() {
@@ -233,9 +240,10 @@ class EntitySequenceGeneric {
   /**
    * @param {Tag} tag
    */
-  constructor(tag) {
+  constructor(tag, shouldIgnoreForMetrics = false) {
     this.tag = tag;
     this.items = [];
+    this.shouldIgnoreForMetrics = shouldIgnoreForMetrics;
     this.metrics = {
       startTimestamp: Date.now(),
       endTimestamp: null,
@@ -272,15 +280,15 @@ class EntitySequenceGeneric {
     return this.metrics.endTimestamp - this.metrics.startTimestamp;
   }
 
-  getSequenceInProgress() {
-    return this.metrics.startTimestamp !== null;
+  getInProgress() {
+    return this.metrics.endTimestamp === null;
   }
 
   /**
    * @param {ItemsOf<Tag>} item
    */
-  addItem(item) {
-    if (!this.getSequenceInProgress()) {
+  addItem(item, forceWhileFinished = false) {
+    if (!this.getInProgress() && !forceWhileFinished) {
       return;
     }
     if (this.items.length === 0) {
@@ -304,9 +312,9 @@ class EntitySequenceGeneric {
   /**
    * @returns {boolean}
    */
-  removeLastGlyphAndResumeNestedSequences() {
+  removeLastGlyphAndResumeNestedSequences(forceWhileFinished = false) {
     // Remove last item:
-    if (!this.getSequenceInProgress()) {
+    if (!this.getInProgress() && !forceWhileFinished) {
       return false;
     }
     if (this.items.length === 0) {
@@ -326,11 +334,6 @@ class EntitySequenceGeneric {
       const previousItemSequence = /** @type{EntitySequences} */ (previousItem);
       previousItemSequence.resumeGrouping();
       if (previousItemSequence.removeLastGlyphAndResumeNestedSequences()) {
-        // Remove empty nesting containers even if we found a glyph to remove.
-        if (previousItemSequence.items.length === 0) {
-          this.element.removeChild(previousItemSequence.element);
-          this.items.pop();
-        }
         this.updateMetrics();
         return true;
       }
@@ -341,29 +344,38 @@ class EntitySequenceGeneric {
     }
 
     // No previous item to resume and recurse on:
+    this.updateMetrics();
     return false;
   }
 
   updateMetrics() {
     let totalIntervals = 0;
+    let totalIntervalsCount = 0;
     for (let i = 1; i < this.items.length; i++) {
+      if (this.items[i].shouldIgnoreForMetrics) {
+        continue;
+      }
+      if (this.items[i - 1].shouldIgnoreForMetrics) {
+        continue;
+      }
       totalIntervals +=
         this.items[i].metrics.startTimestamp -
         this.items[i - 1].metrics.startTimestamp;
+      totalIntervalsCount++;
     }
     this.metrics.averageGlyphInterval =
-      this.items.length > 1 ? totalIntervals / (this.items.length - 1) : 0;
+      totalIntervalsCount > 0 ? totalIntervals / totalIntervalsCount : null;
   }
 
   finishGrouping() {
-    if (!this.getSequenceInProgress()) {
+    if (!this.getInProgress()) {
       return;
     }
     this.metrics.endTimestamp = Date.now();
   }
 
   resumeGrouping() {
-    if (this.getSequenceInProgress()) {
+    if (this.getInProgress()) {
       return;
     }
     this.metrics.endTimestamp = null;
@@ -406,13 +418,13 @@ class Word extends EntitySequenceGeneric {
     super("Word");
     this.element = document.createElement("div");
     this.element.classList.add(CLASS_ENTITY_WORD);
-    this.element.classList.add(CLASS_TEXT_INLINE);
+    this.element.classList.add(CLASS_TEXT_WORD);
   }
 
   resetStyle() {
     this.element = document.createElement("div");
     this.element.classList.add(CLASS_ENTITY_WORD);
-    this.element.classList.add(CLASS_TEXT_INLINE);
+    this.element.classList.add(CLASS_TEXT_WORD);
     super.resetStyle();
   }
 }
@@ -428,13 +440,13 @@ class Sentence extends EntitySequenceGeneric {
     super("Sentence");
     this.element = document.createElement("div");
     this.element.classList.add(CLASS_ENTITY_SENTENCE);
-    this.element.classList.add(CLASS_TEXT_INLINE);
+    this.element.classList.add(CLASS_TEXT_INLINE_WRAPPER);
   }
 
   resetStyle() {
     this.element = document.createElement("div");
     this.element.classList.add(CLASS_ENTITY_SENTENCE);
-    this.element.classList.add(CLASS_TEXT_INLINE);
+    this.element.classList.add(CLASS_TEXT_INLINE_WRAPPER);
     super.resetStyle();
   }
 }

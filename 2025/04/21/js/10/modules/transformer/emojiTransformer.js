@@ -3,7 +3,9 @@
  * @typedef {import("../typings.js").EntityAtomic} EntityAtomic
  */
 
-import { EntityTransformerBase } from "../model.js";
+// @ts-ignore
+import OpenAIBase from "https://cdn.jsdelivr.net/npm/openai@4.97.0/+esm";
+import { EntityTransformerBase, Glyph } from "../model.js";
 
 const CLASS_EMOJI = "emoji";
 const EMOJI_UPDATE_INTERVAL = 5000; // 5 seconds between updates.
@@ -20,7 +22,7 @@ const EMOJI_UPDATE_INTERVAL = 5000; // 5 seconds between updates.
  *       create: (params: {
  *         model: string;
  *         messages: Array<{role: string; content: string}>;
- *         response_format: {type: string};
+ *         seed: number;
  *       }) => Promise<{
  *         choices: Array<{
  *           message: {
@@ -40,7 +42,7 @@ const EMOJI_UPDATE_INTERVAL = 5000; // 5 seconds between updates.
  */
 
 /**
- * Transformer that adds emojis after words using AI completions.
+ * Transformer that adds emoji after words using AI completions.
  *
  * @extends {EntityTransformerBase}
  */
@@ -53,8 +55,9 @@ export class EmojiTransformer extends EntityTransformerBase {
 
   /** @private @type {Map<import("../model.js").EntitySequence<"Paragraph">, {
     lastUpdateTime: number;
-    emojiMap: Map<number, string> | null;
-    wordToGlyphMap: Map<number, import("../model.js").EntitySequence<"Word">>;
+    wordToEmojiCache: Map<import("../model.js").EntitySequence<"Word">, string> | null;
+    updateIsRunning: boolean;
+    seed: number;
   }>} */
   paragraphStateCache = new Map();
 
@@ -75,25 +78,42 @@ export class EmojiTransformer extends EntityTransformerBase {
       return;
     }
 
-    this.completionsService = new /** @type {OpenAIConstructor} */ (
-      // @ts-ignore (OpenAI is loaded from CDN and is guaranteed to exist on
-      // the window object.)
-      window.OpenAI
-    )({
+    this.completionsService = new OpenAIBase({
       baseURL: baseUrl,
       apiKey: apiKey,
+      dangerouslyAllowBrowser: true,
     });
     this.model = model;
   }
 
   /**
    * @private
-   * @param {string} text
-   * @returns {Promise<Map<number, string> | null>}
+   * @param {import("../model.js").EntitySequence<"Word">[]} words
+   * @param {number} seed
+   * @returns {Promise<string[] | null>}
    */
-  async getEmojiMap(text) {
+  async getEmojiForWordList(words, seed) {
     if (!this.completionsService || !this.model) {
       return null;
+    }
+
+    // Convert words to raw text items:
+    const text = words.map((word) =>
+      word.items
+        .map((/** @type {EntityAtomic} */ glyph) => {
+          const typedGlyph = /** @type {import("../model.js").Glyph} */ (glyph);
+          if (typedGlyph.element.classList.contains(CLASS_EMOJI)) {
+            return null;
+          }
+          return typedGlyph.character;
+        })
+        .filter((character) => character !== null)
+        .join("")
+        .replace(/&nbsp;/g, " ")
+        .trim()
+    );
+    if (text.join("").length === 0) {
+      return Array(words.length).fill(null);
     }
 
     try {
@@ -103,32 +123,35 @@ export class EmojiTransformer extends EntityTransformerBase {
           {
             role: "system",
             content: [
-              "You are a helpful assistant that adds relevant emojis after words in a text.",
-              "Words are separated by spaces.",
-              "Return a JSON array where each element is either null or an emoji string.",
-              "The array length should match the number of words in the text.",
-              "Do not add emojis after the last word.",
+              "You are a helpful assistant that adds relevant emoji after words in a text in the style of an Emojipasta meme.",
+              "Your input is a list of words, which were separated by spaces in the text.",
+              "Transform the array into a new array by adding a particular emoji string or `null` after each word.",
+              "Use a `null` element (the literal `null`, not a string) when there isn't a relevant emoji to add after a word.",
+              "The number of elements in the array should end up being exactly double the number of words in the input.",
+              "Do not return anything but a JSON array literal, which must use double-quotes for strings according to spec.",
             ].join(" "),
           },
           {
             role: "user",
-            content: text,
+            content: JSON.stringify(text),
           },
         ],
-        response_format: { type: "json_object" },
+        seed,
       });
 
       const result = JSON.parse(response.choices[0].message.content);
-      const emojiMap = new Map();
+      const wordsEmoji = new Array(words.length);
 
-      // Convert array to map, skipping the last word:
-      for (let i = 0; i < result.length - 1; i++) {
-        if (result[i] !== null) {
-          emojiMap.set(i, result[i]);
+      // Ensure structure of result by reading it into a blank array:
+      for (let i = 0; i < words.length * 2; i += 2) {
+        if (typeof result[i] === "string" && result[i] !== "null") {
+          wordsEmoji[i / 2] = result[i + 1] || null;
+        } else {
+          wordsEmoji[i / 2] = null;
         }
       }
 
-      return emojiMap;
+      return wordsEmoji;
     } catch (error) {
       console.error("Error getting emoji completions:", error);
       return null;
@@ -168,11 +191,7 @@ export class EmojiTransformer extends EntityTransformerBase {
    * @param {EntityTransformerContextBase} contextBase
    */
   async transformParagraph(item, contextBase) {
-    if (
-      item !== this.latestParagraph ||
-      !this.completionsService ||
-      !this.model
-    ) {
+    if (!this.completionsService || !this.model) {
       return;
     }
 
@@ -181,62 +200,90 @@ export class EmojiTransformer extends EntityTransformerBase {
     if (!paragraphState) {
       paragraphState = {
         lastUpdateTime: 0,
-        emojiMap: null,
-        wordToGlyphMap: new Map(),
+        wordToEmojiCache: null,
+        updateIsRunning: false,
+        seed: Math.floor(Math.random() * 1000000),
       };
       this.paragraphStateCache.set(item, paragraphState);
     }
 
-    // Check if it's time to update emojis:
+    // Short-circuit if we've updated emoji recently or we're running an update:
     const now = Date.now();
-    if (now - paragraphState.lastUpdateTime < EMOJI_UPDATE_INTERVAL) {
+    if (
+      now - paragraphState.lastUpdateTime < EMOJI_UPDATE_INTERVAL ||
+      paragraphState.updateIsRunning
+    ) {
       return;
     }
 
-    // Get all words from all sentences in the paragraph:
+    // Get all words from all sentences in the paragraph. Short-circuit if we
+    // don't have any words:
     const words = item.items.flatMap((sentence) => sentence.items);
     if (words.length === 0) {
       return;
     }
 
-    // Update word to glyph mapping:
-    const newWordToGlyphMap = new Map();
-    words.forEach((word, index) => {
-      newWordToGlyphMap.set(index, word);
-    });
-    paragraphState.wordToGlyphMap = newWordToGlyphMap;
+    // Short-circuit if the latest started word predates the last update time:
+    if (words.length > 0) {
+      const latestWord = words[words.length - 1];
+      if (latestWord.metrics.startTimestamp < paragraphState.lastUpdateTime) {
+        return;
+      }
+    }
 
-    // Get the text content of the paragraph:
-    const text = words
-      .map((word) =>
-        word.items
-          .map((/** @type {EntityAtomic} */ glyph) => {
-            const typedGlyph = /** @type {import("../model.js").Glyph} */ (
-              glyph
-            );
-            return typedGlyph.character;
-          })
-          .join("")
-      )
-      .join(" ");
-
-    // Update emoji map:
-    paragraphState.emojiMap = await this.getEmojiMap(text);
+    // Retrieve emoji map in a locked update call:
+    paragraphState.updateIsRunning = true;
+    const wordsEmoji = await this.getEmojiForWordList(
+      words,
+      paragraphState.seed
+    );
     paragraphState.lastUpdateTime = now;
-    if (!paragraphState.emojiMap) {
+    paragraphState.updateIsRunning = false;
+    if (!wordsEmoji) {
       return;
     }
 
-    // Apply emojis to words using the stable mapping:
-    Array.from(paragraphState.emojiMap.entries()).forEach(([index, emoji]) => {
-      const word = paragraphState.wordToGlyphMap.get(index);
-      if (word && word.items.length > 0 && word.getDuration() !== null) {
-        // Find the last glyph in the word (space):
-        const lastGlyph = word.items[word.items.length - 1];
-        if (lastGlyph) {
-          // Update the space glyph to include the emoji:
-          lastGlyph.element.innerHTML = `&nbsp;${emoji}&nbsp;`;
-          lastGlyph.element.classList.add(CLASS_EMOJI);
+    // Apply emoji to words using the stable indices of words at the time we
+    // dispatched the completions query. Cache emoji for word references to
+    // avoid churn as the user types.
+    wordsEmoji.forEach((emoji, index) => {
+      const word = words[index];
+      if (word && word.items.length > 0 && word.metrics.endTimestamp !== null) {
+        // Clear any existing emoji from the word:
+        while (
+          word.items.length > 0 &&
+          word.items[word.items.length - 1].element.classList.contains(
+            CLASS_EMOJI
+          )
+        ) {
+          word.removeLastGlyphAndResumeNestedSequences(true);
+        }
+
+        // Add non-null emoji to the word:
+        if (emoji) {
+          let emojiSingle = "";
+          // Grab only the first code point of the emoji string.
+          for (const character of emoji) {
+            emojiSingle = character;
+            break;
+          }
+          const lastGlyph = /** @type {import("../model.js").Glyph} */ (
+            word.items[word.items.length - 1]
+          );
+          if (lastGlyph.character !== "&nbsp;") {
+            const preNbsp = new Glyph("&nbsp;");
+            preNbsp.element.classList.add(CLASS_EMOJI);
+            preNbsp.release();
+            word.addItem(preNbsp, true);
+          }
+          const emojiGlyph = new Glyph(emojiSingle);
+          emojiGlyph.element.classList.add(CLASS_EMOJI);
+          emojiGlyph.release();
+          word.addItem(emojiGlyph, true);
+          const postNbsp = new Glyph("&nbsp;");
+          postNbsp.element.classList.add(CLASS_EMOJI);
+          postNbsp.release();
+          word.addItem(postNbsp, true);
         }
       }
     });

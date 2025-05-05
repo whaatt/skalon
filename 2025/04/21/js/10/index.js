@@ -40,6 +40,7 @@ import {
   DEFAULT_COMPLETIONS_CONFIG,
   DEFAULT_TRANSFORMERS,
   Registry,
+  TRANSFORMER_APPLICATION_SORT_ORDER,
 } from "./modules/transformer/index.js";
 
 /**
@@ -349,6 +350,11 @@ Array.from(
       manager.resetStyle();
     }
     selectedTransformers = newSelectedTransformers;
+    selectedTransformers.sort(
+      (a, b) =>
+        TRANSFORMER_APPLICATION_SORT_ORDER[a] -
+        TRANSFORMER_APPLICATION_SORT_ORDER[b]
+    );
     // Yes; I'm re-creating React semantics here (event on element updates the
     // state, which in turn updates the UI).
     syncTransformerSelectionState(selectedTransformers);
@@ -371,7 +377,8 @@ const syncEmojiTransformerOption = () => {
 syncEmojiTransformerOption();
 
 // Emoji transformer completions config button handler:
-completionsConfigButton.addEventListener("click", () => {
+completionsConfigButton.addEventListener("click", (event) => {
+  event.stopPropagation();
   const currentConfig = completionsConfig;
   const newBaseUrl = window.prompt(
     "Enter completions API Base URL (or hit OK to keep current):",

@@ -41,6 +41,7 @@ type EntityBase<Tag extends TagTypes> = {
   [K in TagTypes]: {
     tag: Tag;
     isSequence: Tag extends TagSequenceTypes ? true : false;
+    shouldIgnoreForMetrics: boolean;
     metrics: {
       startTimestamp: number;
       endTimestamp: number | null;
@@ -50,6 +51,7 @@ type EntityBase<Tag extends TagTypes> = {
 
     resetStyle(): void;
     getDuration(): number | null;
+    getInProgress(): boolean;
     transformWith(
       transformer: EntityTransformer,
       contextBase: EntityTransformerContextBase
@@ -89,9 +91,12 @@ export type EntitySequence<Tag extends TagSequenceTypes> = {
     };
 
     getDuration(): number;
-    addItem(item: ItemsOf<Tag>): void;
+    getInProgress(): boolean;
+    addItem(item: ItemsOf<Tag>, forceWhileFinished?: boolean): void;
     getLastItem(): ItemsOf<Tag> | null;
-    removeLastGlyphAndResumeNestedSequences(): boolean;
+    removeLastGlyphAndResumeNestedSequences(
+      forceWhileFinished?: boolean
+    ): boolean;
     finishGrouping(): void;
     resumeGrouping(): void;
   };

@@ -8,6 +8,7 @@ html {
 
 body {
   display: table-cell;
+  vertical-align: middle;
   background: #f7f3f0;
   width: 100%;
   font-family: "Nunito", sans-serif;
@@ -471,11 +472,20 @@ a[disabled] {
   content: "";
 } */
 
-.text-inline {
+.text-glyph {
   display: inline-block;
-  word-wrap: break-word;
   /* TODO: Should this be applied by the transformer? */
   transition: font-size 0.1s ease-out, transform 0.05s linear;
+}
+
+.text-word {
+  display: inline-block;
+  word-wrap: break-word;
+}
+
+.text-inline-wrapper {
+  display: inline;
+  word-wrap: break-word;
 }
 
 @keyframes cursor-blink {
@@ -495,12 +505,6 @@ a[disabled] {
   animation: cursor-blink 1s ease-in-out infinite;
   background: brown;
   content: "\00a0";
-}
-
-.emoji {
-  display: inline-block;
-  vertical-align: middle;
-  margin: 0 0.1rem;
 }
 
 #navigation {

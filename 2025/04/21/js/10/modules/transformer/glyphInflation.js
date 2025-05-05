@@ -5,7 +5,6 @@
 import { CLASS_PARAGRAPH_BREAK, TERMINATOR_WORD } from "../constants.js";
 import { EntityTransformerBase } from "../model.js";
 
-const CLASS_INFLATING = "glyph-inflating";
 const MAX_SCALE = 5;
 const INFLATION_BASELINE_MILLISECONDS = 60;
 
@@ -15,6 +14,9 @@ const INFLATION_BASELINE_MILLISECONDS = 60;
  * @extends {EntityTransformerBase}
  */
 export class GlyphInflationTransformer extends EntityTransformerBase {
+  /** @private @type {number} */
+  currentWordFontSize = 0;
+
   /**
    * @readonly @param {import("../model.js").Glyph} item
    * @param {EntityTransformerContextBase} contextBase
@@ -30,8 +32,7 @@ export class GlyphInflationTransformer extends EntityTransformerBase {
       item.metrics.endTimestamp !== null ||
       item.character === TERMINATOR_WORD
     ) {
-      element.classList.remove(CLASS_INFLATING);
-      element.style.fontSize = "";
+      element.style.fontSize = `${this.currentWordFontSize}rem`;
       return;
     }
 
@@ -44,10 +45,8 @@ export class GlyphInflationTransformer extends EntityTransformerBase {
 
     // Apply font size to the glyph element:
     if (pressDuration > 0) {
-      element.classList.add(CLASS_INFLATING);
       element.style.fontSize = `${scale}rem`;
     } else {
-      element.classList.remove(CLASS_INFLATING);
       element.style.fontSize = "";
     }
   }
@@ -69,22 +68,14 @@ export class GlyphInflationTransformer extends EntityTransformerBase {
       }
     }
 
-    // Calculate font size scaling based on the max press duration:
-    const scale = Math.min(
+    // Calculate default word-level scaling based on the max press duration:
+    this.currentWordFontSize = Math.min(
       maxPressDuration / INFLATION_BASELINE_MILLISECONDS,
       MAX_SCALE
     );
+    item.element.style.fontSize = `${this.currentWordFontSize}rem`;
 
-    // Apply font size to the word element:
-    if (maxPressDuration > 0) {
-      item.element.classList.add(CLASS_INFLATING);
-      item.element.style.fontSize = `${scale}rem`;
-    } else {
-      item.element.classList.remove(CLASS_INFLATING);
-      item.element.style.fontSize = "";
-    }
-
-    // Apply per-glyph transformation for the last glyph:
+    // Apply per-glyph transformation to propagate the calculated scaling:
     EntityTransformerBase.prototype.transformWord.call(this, item, contextBase);
   }
 }

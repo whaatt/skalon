@@ -4,6 +4,7 @@ export const ACTION_CAPS = "Caps";
 export const ATTRIBUTE_DATA_ACTION = "data-action";
 export const ATTRIBUTE_DATA_KEY = "data-key";
 export const ATTRIBUTE_DATA_KEY_VALUE_ENTER = "Enter";
+export const ATTRIBUTE_DATA_PRIOR_VALUE = "data-prior-value";
 export const ATTRIBUTE_DATA_TRANSFORMER_OPTION = "data-transformer-option";
 export const ATTRIBUTE_DATA_TRANSFORMER_OPTION_VALUE_EMOJI = "EmojiTransformer";
 export const BUTTON_CONTROLS_SYMBOL_CANVAS = "✎";
@@ -25,7 +26,9 @@ export const CLASS_AURAFONT_TRANSFORMER_OPTION_NOT_CONFIGURED =
   "aurafont-transformer-option-not-configured";
 
 export const CLASS_CURRENT_GLYPH = "current-glyph";
-export const CLASS_TEXT_INLINE = "text-inline";
+export const CLASS_TEXT_GLYPH = "text-glyph";
+export const CLASS_TEXT_WORD = "text-word";
+export const CLASS_TEXT_INLINE_WRAPPER = "text-inline-wrapper";
 export const CLASS_KEY = "key";
 export const CLASS_KEY_ACTIVE = "key-active";
 export const CLASS_PARAGRAPH_BREAK = "text-paragraph-break";
@@ -50,5 +53,5 @@ export const TERMINATOR_PARAGRAPH = "\n";
 export const TERMINATOR_WORD = "&nbsp;";
 export const TERMINATORS_SENTENCE = [".", "!", "?"];
 
-export const LABEL_CONFIGURE_API = "Configure API";
-export const LABEL_API_CONFIGURED = "API Configured";
+export const LABEL_CONFIGURE_API = "Configure LLM";
+export const LABEL_API_CONFIGURED = "LLM Configured";
