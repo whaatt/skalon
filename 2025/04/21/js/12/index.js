@@ -400,7 +400,9 @@ completionsConfigButton.addEventListener("click", (event) => {
     return;
   }
   const newApiKey = window.prompt(
-    "Enter completions API Key (or hit OK to keep current; use an empty value to clear):",
+    "Enter completions API Key (or hit OK to keep current; use an empty value to clear). " +
+      "Stored in local storage and only used to query the LLM provider at your specified URL " +
+      "(but you will be trusting my code by entering it here):",
     currentConfig.apiKey ? "********" : ""
   );
   if (newApiKey === null) {
