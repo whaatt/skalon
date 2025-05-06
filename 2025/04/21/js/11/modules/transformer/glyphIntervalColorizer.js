@@ -116,21 +116,21 @@ export class GlyphIntervalColorizer extends EntityTransformerBase {
    */
   transformGlyph(item, contextBase) {
     // Skip if the glyph hasn't been completed yet.
-    if (item.metrics.endTimestamp === null) {
+    if (item.endTimestamp === null) {
       return;
     }
 
     // Calculate the interval between this glyph and the previous one.
     const interval =
       this.lastGlyphStartTime !== null
-        ? item.metrics.startTimestamp - this.lastGlyphStartTime
+        ? item.startTimestamp - this.lastGlyphStartTime
         : INTERVAL_THRESHOLDS.MEDIUM; // Default to medium speed
 
     // Add the interval with its timestamps.
     this.recentIntervals.push({
       interval,
-      startTime: item.metrics.startTimestamp,
-      endTime: item.metrics.endTimestamp,
+      startTime: item.startTimestamp,
+      endTime: item.endTimestamp,
     });
 
     // Keep only the most recent intervals up to the window size.
@@ -139,13 +139,11 @@ export class GlyphIntervalColorizer extends EntityTransformerBase {
     }
 
     // Update the last glyph start time.
-    this.lastGlyphStartTime = item.metrics.startTimestamp;
+    this.lastGlyphStartTime = item.startTimestamp;
 
     // Calculate the average interval, considering only recent valid intervals
     // relative to this glyph's start time.
-    const averageInterval = this.calculateAverageInterval(
-      item.metrics.startTimestamp
-    );
+    const averageInterval = this.calculateAverageInterval(item.startTimestamp);
 
     // Apply color based on the average interval.
     const color = this.getColorForInterval(averageInterval);

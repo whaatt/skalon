@@ -28,16 +28,13 @@ export class GlyphInflationTransformer extends EntityTransformerBase {
     }
 
     // Do not inflate spaces or completed glyphs individually.
-    if (
-      item.metrics.endTimestamp !== null ||
-      item.character === TERMINATOR_WORD
-    ) {
+    if (!item.getInProgress() || item.character === TERMINATOR_WORD) {
       element.style.fontSize = `${this.currentWordFontSize}rem`;
       return;
     }
 
     // Calculate press duration:
-    const pressDuration = Date.now() - item.metrics.startTimestamp;
+    const pressDuration = Date.now() - item.startTimestamp;
     const scale = Math.min(
       pressDuration / INFLATION_BASELINE_MILLISECONDS,
       MAX_SCALE
@@ -59,11 +56,11 @@ export class GlyphInflationTransformer extends EntityTransformerBase {
     // Find the max press duration among all completed glyphs in the word:
     let maxPressDuration = 0;
     for (const glyph of item.items) {
-      if (glyph.metrics.endTimestamp !== null) {
-        // If released, use the time between start and end
+      if (glyph.endTimestamp !== null) {
+        // If released, use the time between start and end:
         maxPressDuration = Math.max(
           maxPressDuration,
-          glyph.metrics.endTimestamp - glyph.metrics.startTimestamp
+          glyph.endTimestamp - glyph.startTimestamp
         );
       }
     }

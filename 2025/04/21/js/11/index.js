@@ -319,6 +319,11 @@ const syncTransformerSelectionState = (
 };
 
 // Initial transformer selection state sync:
+selectedTransformers.sort(
+  (a, b) =>
+    TRANSFORMER_APPLICATION_SORT_ORDER[a] -
+    TRANSFORMER_APPLICATION_SORT_ORDER[b]
+);
 syncTransformerSelectionState(selectedTransformers);
 
 // Transformer selection handler:

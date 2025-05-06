@@ -139,12 +139,12 @@ export class Glyph {
   isSequence = false;
   /** @type {string} */
   character;
-  /** @type {{
-    startTimestamp: number;
-    endTimestamp: number | null;
-    groupPosition: [number, number] | null;
-  }} */
-  metrics;
+  /** @type {boolean} */
+  shouldIgnoreForMetrics;
+  /** @type {number} */
+  startTimestamp;
+  /** @type {number | null} */
+  endTimestamp;
   /** @type {HTMLDivElement} */
   element;
 
@@ -154,11 +154,8 @@ export class Glyph {
   constructor(character, shouldIgnoreForMetrics = false) {
     this.character = character;
     this.shouldIgnoreForMetrics = shouldIgnoreForMetrics;
-    this.metrics = {
-      startTimestamp: Date.now(),
-      endTimestamp: null,
-      groupPosition: null,
-    };
+    this.startTimestamp = Date.now();
+    this.endTimestamp = null;
     this.element = document.createElement("div");
     this.element.classList.add(CLASS_TEXT_GLYPH);
     if (character === TERMINATOR_PARAGRAPH) {
@@ -183,23 +180,23 @@ export class Glyph {
    * @returns {number}
    */
   getDuration() {
-    if (this.metrics.startTimestamp === null) {
+    if (this.startTimestamp === null) {
       return 0;
     }
 
-    if (this.metrics.endTimestamp === null) {
-      return Date.now() - this.metrics.startTimestamp;
+    if (this.endTimestamp === null) {
+      return Date.now() - this.startTimestamp;
     }
 
-    return this.metrics.endTimestamp - this.metrics.startTimestamp;
+    return this.endTimestamp - this.startTimestamp;
   }
 
   getInProgress() {
-    return this.metrics.endTimestamp === null;
+    return this.endTimestamp === null;
   }
 
   release() {
-    this.metrics.endTimestamp = Date.now();
+    this.endTimestamp = Date.now();
   }
 
   /**
@@ -223,12 +220,12 @@ class EntitySequenceGeneric {
   isSequence = true;
   /** @type {ItemsOf<Tag>[]} */
   items;
+  /** @type {number} */
+  startTimestamp;
+  /** @type {number | null} */
+  endTimestamp;
   /** @type {{
-    startTimestamp: number;
-    endTimestamp: number | null;
     averageGlyphInterval: number | null;
-    pauseBeforeWord: number | null;
-    groupPosition: [number, number] | null;
   }} */
   metrics;
   /**
@@ -244,12 +241,10 @@ class EntitySequenceGeneric {
     this.tag = tag;
     this.items = [];
     this.shouldIgnoreForMetrics = shouldIgnoreForMetrics;
+    this.startTimestamp = Date.now();
+    this.endTimestamp = null;
     this.metrics = {
-      startTimestamp: Date.now(),
-      endTimestamp: null,
       averageGlyphInterval: null,
-      pauseBeforeWord: null,
-      groupPosition: null,
     };
     this.element = document.createElement("div");
   }
@@ -269,19 +264,19 @@ class EntitySequenceGeneric {
    * @returns {number}
    */
   getDuration() {
-    if (this.metrics.startTimestamp === null) {
+    if (this.startTimestamp === null) {
       return 0;
     }
 
-    if (this.metrics.endTimestamp === null) {
-      return Date.now() - this.metrics.startTimestamp;
+    if (this.endTimestamp === null) {
+      return Date.now() - this.startTimestamp;
     }
 
-    return this.metrics.endTimestamp - this.metrics.startTimestamp;
+    return this.endTimestamp - this.startTimestamp;
   }
 
   getInProgress() {
-    return this.metrics.endTimestamp === null;
+    return this.endTimestamp === null;
   }
 
   /**
@@ -292,7 +287,7 @@ class EntitySequenceGeneric {
       return;
     }
     if (this.items.length === 0) {
-      this.metrics.startTimestamp = item.metrics.startTimestamp;
+      this.startTimestamp = item.startTimestamp;
     }
     this.items.push(item);
     this.element.appendChild(item.element);
@@ -313,7 +308,6 @@ class EntitySequenceGeneric {
    * @returns {boolean}
    */
   removeLastGlyphAndResumeNestedSequences(forceWhileFinished = false) {
-    // Remove last item:
     if (!this.getInProgress() && !forceWhileFinished) {
       return false;
     }
@@ -327,6 +321,8 @@ class EntitySequenceGeneric {
       if (previousItem.tag === "Glyph") {
         this.element.removeChild(previousItem.element);
         this.items.pop();
+        this.updateMetrics();
+        this.resumeGrouping();
         return true;
       }
 
@@ -334,17 +330,17 @@ class EntitySequenceGeneric {
       const previousItemSequence = /** @type{EntitySequences} */ (previousItem);
       previousItemSequence.resumeGrouping();
       if (previousItemSequence.removeLastGlyphAndResumeNestedSequences()) {
-        this.updateMetrics();
+        this.resumeGrouping();
         return true;
       }
 
       this.element.removeChild(previousItem.element);
       this.items.pop();
-      this.updateMetrics();
     }
 
     // No previous item to resume and recurse on:
     this.updateMetrics();
+    this.resumeGrouping();
     return false;
   }
 
@@ -359,8 +355,7 @@ class EntitySequenceGeneric {
         continue;
       }
       totalIntervals +=
-        this.items[i].metrics.startTimestamp -
-        this.items[i - 1].metrics.startTimestamp;
+        this.items[i].startTimestamp - this.items[i - 1].startTimestamp;
       totalIntervalsCount++;
     }
     this.metrics.averageGlyphInterval =
@@ -371,14 +366,14 @@ class EntitySequenceGeneric {
     if (!this.getInProgress()) {
       return;
     }
-    this.metrics.endTimestamp = Date.now();
+    this.endTimestamp = Date.now();
   }
 
   resumeGrouping() {
     if (this.getInProgress()) {
       return;
     }
-    this.metrics.endTimestamp = null;
+    this.endTimestamp = null;
   }
 
   /**

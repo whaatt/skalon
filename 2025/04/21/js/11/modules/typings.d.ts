@@ -42,11 +42,8 @@ type EntityBase<Tag extends TagTypes> = {
     tag: Tag;
     isSequence: Tag extends TagSequenceTypes ? true : false;
     shouldIgnoreForMetrics: boolean;
-    metrics: {
-      startTimestamp: number;
-      endTimestamp: number | null;
-      groupPosition: [number, number] | null;
-    };
+    startTimestamp: number;
+    endTimestamp: number | null;
     element: HTMLDivElement;
 
     resetStyle(): void;
@@ -87,7 +84,6 @@ export type EntitySequence<Tag extends TagSequenceTypes> = {
     items: ItemsOf<Tag>[];
     metrics: {
       averageGlyphInterval: number | null;
-      pauseBeforeWord: number | null;
     };
 
     getDuration(): number;

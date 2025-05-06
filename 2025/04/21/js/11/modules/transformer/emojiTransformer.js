@@ -5,6 +5,7 @@
 
 // @ts-ignore
 import OpenAIBase from "https://cdn.jsdelivr.net/npm/openai@4.97.0/+esm";
+import { TERMINATOR_WORD } from "../constants.js";
 import { EntityTransformerBase, Glyph } from "../model.js";
 
 const CLASS_EMOJI = "emoji";
@@ -144,7 +145,7 @@ export class EmojiTransformer extends EntityTransformerBase {
 
       // Ensure structure of result by reading it into a blank array:
       for (let i = 0; i < words.length * 2; i += 2) {
-        if (typeof result[i] === "string" && result[i] !== "null") {
+        if (typeof result[i] === "string" && result[i + 1] !== "null") {
           wordsEmoji[i / 2] = result[i + 1] || null;
         } else {
           wordsEmoji[i / 2] = null;
@@ -226,7 +227,7 @@ export class EmojiTransformer extends EntityTransformerBase {
     // Short-circuit if the latest started word predates the last update time:
     if (words.length > 0) {
       const latestWord = words[words.length - 1];
-      if (latestWord.metrics.startTimestamp < paragraphState.lastUpdateTime) {
+      if (latestWord.startTimestamp < paragraphState.lastUpdateTime) {
         return;
       }
     }
@@ -244,11 +245,10 @@ export class EmojiTransformer extends EntityTransformerBase {
     }
 
     // Apply emoji to words using the stable indices of words at the time we
-    // dispatched the completions query. Cache emoji for word references to
-    // avoid churn as the user types.
+    // dispatched the completions query:
     wordsEmoji.forEach((emoji, index) => {
       const word = words[index];
-      if (word && word.items.length > 0 && word.metrics.endTimestamp !== null) {
+      if (word && word.items.length > 0 && !word.getInProgress()) {
         // Clear any existing emoji from the word:
         while (
           word.items.length > 0 &&
@@ -259,7 +259,7 @@ export class EmojiTransformer extends EntityTransformerBase {
           word.removeLastGlyphAndResumeNestedSequences(true);
         }
 
-        // Add non-null emoji to the word:
+        // Add non-null emoji to the word by appending spacer and emoji glyphs:
         if (emoji) {
           let emojiSingle = "";
           // Grab only the first code point of the emoji string.
@@ -270,21 +270,27 @@ export class EmojiTransformer extends EntityTransformerBase {
           const lastGlyph = /** @type {import("../model.js").Glyph} */ (
             word.items[word.items.length - 1]
           );
-          if (lastGlyph.character !== "&nbsp;") {
-            const preNbsp = new Glyph("&nbsp;");
-            preNbsp.element.classList.add(CLASS_EMOJI);
-            preNbsp.release();
-            word.addItem(preNbsp, true);
+          // Add a spacer before the emoji if there isn't one already:
+          if (lastGlyph.character !== TERMINATOR_WORD) {
+            const preSpacer = new Glyph(TERMINATOR_WORD);
+            preSpacer.element.classList.add(CLASS_EMOJI);
+            preSpacer.release();
+            word.addItem(preSpacer, true);
           }
+          // Add the emoji glyph:
           const emojiGlyph = new Glyph(emojiSingle);
           emojiGlyph.element.classList.add(CLASS_EMOJI);
           emojiGlyph.release();
           word.addItem(emojiGlyph, true);
-          const postNbsp = new Glyph("&nbsp;");
-          postNbsp.element.classList.add(CLASS_EMOJI);
-          postNbsp.release();
-          word.addItem(postNbsp, true);
+          // Add a spacer after the emoji:
+          const postSpacer = new Glyph(TERMINATOR_WORD);
+          postSpacer.element.classList.add(CLASS_EMOJI);
+          postSpacer.release();
+          word.addItem(postSpacer, true);
         }
+
+        // Set the word back to a completed state.
+        word.finishGrouping();
       }
     });
   }
