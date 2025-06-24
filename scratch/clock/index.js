@@ -11,7 +11,7 @@
 
 // Display parameter constants.
 const DISPLAY_PARAMS = {
-  TRAIL_FADE_ALPHA: 0.01,
+  // `BACKGROUND` and `BACKGROUND_LIGHT_MODE` are now hardcoded.
   PARTICLE_COLORS: [
     "#0000FF", // Pure Blue.
     "#0040FF", // Electric Blue.
@@ -25,6 +25,7 @@ const DISPLAY_PARAMS = {
     "#0066CC", // Medium Blue.
   ],
   EXPELLED_COLORS_FOREGROUND: ["#000000"],
+  EXPELLED_COLORS_FOREGROUND_LIGHT_MODE: ["#FFFFFF"],
   EXPELLED_COLORS_BACKGROUND: ["#FF66FF"],
   DEBUG_OVERLAY_ALPHA: 1,
   FONT_FAMILY: "Barlow, sans-serif",
@@ -107,7 +108,7 @@ class Particle {
   /**
    * Updates the particle's position and state.
    * @param {ParticleTextEngine} engine - The text engine instance.
-   * @returns {boolean} True if particle is still alive, false otherwise.
+   * @returns {boolean} True if particle is still alive; false otherwise.
    */
   update(engine) {
     // If particle is expelled, just move it and don't apply other logic.
@@ -234,7 +235,7 @@ class Particle {
    * @param {number} y - Y coordinate to check.
    * @param {ImageDataLike|null} textBounds - Text bounds image data.
    * @param {number} particleSize - Size of the particle.
-   * @returns {boolean} True if inside text, false otherwise.
+   * @returns {boolean} True if inside text; false otherwise.
    */
   isInsideText(x, y, textBounds, particleSize = 1) {
     if (!textBounds) return false;
@@ -392,7 +393,9 @@ class Particle {
         engine.textBounds,
         engine.particleSize
       )
-        ? DISPLAY_PARAMS.EXPELLED_COLORS_FOREGROUND
+        ? engine.isLightMode
+          ? DISPLAY_PARAMS.EXPELLED_COLORS_FOREGROUND_LIGHT_MODE
+          : DISPLAY_PARAMS.EXPELLED_COLORS_FOREGROUND
         : DISPLAY_PARAMS.EXPELLED_COLORS_BACKGROUND;
       fillColor =
         expelledColors[Math.floor(Math.random() * expelledColors.length)];
@@ -406,13 +409,14 @@ class Particle {
 
     // Check if particle should be gray (mouse hovering but not pressed and on
     // screen).
-    if (!engine.isMouseDown && engine.isMouseOnScreen()) {
+    if (!engine.isMouseDown && engine.cachedIsMouseOnScreen) {
       const dx = this.x - engine.mouseX;
       const dy = this.y - engine.mouseY;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (distance < engine.getMouseForceRadius()) {
-        fillColor = "#C0C0C0"; // Moon-like silver gray
+      if (distance < engine.cachedMouseForceRadius) {
+        // Dark gray for light mode and light gray for dark mode.
+        fillColor = engine.isLightMode ? "#BA8E23" : "#C0C0C0";
       }
     }
 
@@ -463,6 +467,16 @@ class ParticleTextEngine {
     this.isMouseDown = false;
     this.isMouseOverCanvas = false;
 
+    // Light mode state.
+    this.isLightMode = this.loadLightModePreference();
+
+    // Trail fade state.
+    this.isHighTrailFade = this.loadTrailFadePreference();
+
+    // Cached mouse interaction values for performance.
+    this.cachedMouseForceRadius = 0;
+    this.cachedIsMouseOnScreen = false;
+
     // FPS tracking.
     this.lastFrameTime = performance.now();
     this.frameCount = 0;
@@ -478,6 +492,9 @@ class ParticleTextEngine {
     this.setupCanvas();
     this.setupKeyboard();
     this.setupMouse();
+
+    // Set initial body background color.
+    this.updateBodyBackground();
 
     // Set the initial clock text BEFORE spawning particles.
     this.updateText(getCurrentDateTime());
@@ -506,8 +523,84 @@ class ParticleTextEngine {
     window.addEventListener("keydown", (e) => {
       if (e.key.toLowerCase() === "d") {
         this.showDebug = !this.showDebug;
+      } else if (e.key.toLowerCase() === "m") {
+        this.isLightMode = !this.isLightMode;
+        this.saveLightModePreference();
+        this.updateBodyBackground();
+        this.clearCanvas();
+      } else if (e.key.toLowerCase() === "f") {
+        this.isHighTrailFade = !this.isHighTrailFade;
+        this.saveTrailFadePreference();
+        this.clearCanvas();
       }
     });
+  }
+
+  /**
+   * Loads light mode preference from localStorage or system preference.
+   * @returns {boolean} True for light mode; false for dark mode.
+   */
+  loadLightModePreference() {
+    // Check `localStorage` first.
+    const stored = localStorage.getItem("lightMode");
+    if (stored !== null) {
+      return stored === "true";
+    }
+
+    // Fall back to system preference.
+    return !window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+
+  /**
+   * Saves light mode preference to `localStorage`.
+   */
+  saveLightModePreference() {
+    localStorage.setItem("lightMode", this.isLightMode.toString());
+  }
+
+  /**
+   * Loads trail fade preference from `localStorage`.
+   * @returns {boolean} True for high trail fade (0.01); false for low (0.0001).
+   */
+  loadTrailFadePreference() {
+    // Check `localStorage` first.
+    const stored = localStorage.getItem("trailFade");
+    if (stored !== null) {
+      return stored === "true";
+    }
+
+    // Default to high trail fade.
+    return true;
+  }
+
+  /**
+   * Saves trail fade preference to `localStorage`.
+   */
+  saveTrailFadePreference() {
+    localStorage.setItem("trailFade", this.isHighTrailFade.toString());
+  }
+
+  /**
+   * Gets the current trail fade alpha value based on preference.
+   * @returns {number} Trail fade alpha value.
+   */
+  getTrailFadeAlpha() {
+    return this.isHighTrailFade ? 0.01 : 0.0001;
+  }
+
+  /**
+   * Clears the canvas with the appropriate background color.
+   */
+  clearCanvas() {
+    this.ctx.fillStyle = this.isLightMode ? "#FFFFFF" : "#000000";
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  /**
+   * Updates the body background color based on light mode state.
+   */
+  updateBodyBackground() {
+    document.body.style.backgroundColor = this.isLightMode ? "#FFF" : "#000";
   }
 
   /**
@@ -756,6 +849,11 @@ class ParticleTextEngine {
    * Updates all particles and handles respawning.
    */
   update() {
+    // Cache mouse interaction values for this frame to avoid recalculating for
+    // every particle.
+    this.cachedMouseForceRadius = this.getMouseForceRadius();
+    this.cachedIsMouseOnScreen = this.isMouseOnScreen();
+
     // Update particles and handle respawning.
     for (let i = 0; i < this.particles.length; i++) {
       if (!this.particles[i].update(this)) {
@@ -770,7 +868,10 @@ class ParticleTextEngine {
    */
   draw() {
     // Create subtle trails with simple fade overlay
-    this.ctx.fillStyle = `rgba(0, 0, 0, ${DISPLAY_PARAMS.TRAIL_FADE_ALPHA})`;
+    const trailAlpha = this.getTrailFadeAlpha();
+    this.ctx.fillStyle = this.isLightMode
+      ? `rgba(255, 255, 255, ${trailAlpha})`
+      : `rgba(0, 0, 0, ${trailAlpha})`;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Clear pixels around mouse cursor when button is pressed
