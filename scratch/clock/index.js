@@ -29,7 +29,7 @@ const DISPLAY_PARAMS = {
   EXPELLED_COLORS_BACKGROUND: ["#FF66FF"],
   DEBUG_OVERLAY_ALPHA: 1,
   FONT_FAMILY: "Barlow, sans-serif",
-  DEBUG_FONT: "14px Barlow,sans-serif",
+  DEBUG_FONT: "14px Barlow, sans-serif",
 };
 
 // Physics and behavior constants.
@@ -56,7 +56,6 @@ const ENGINE_CONFIG = {
   LINE_HEIGHT_MULTIPLIER: 1,
   MAX_PARTICLES: 30000,
   PADDING_PERCENT_OF_CANVAS: 0.1, // 10% of canvas dimensions.
-  PARTICLE_SIZE_SCALE: 0.02, // Particle size as ratio of font size.
   TEXT_LEFT_POSITION: 50,
 };
 
@@ -467,6 +466,9 @@ class ParticleTextEngine {
     this.isMouseDown = false;
     this.isMouseOverCanvas = false;
 
+    // Touch interaction state.
+    this.isTouching = false;
+
     // Light mode state.
     this.isLightMode = this.loadLightModePreference();
 
@@ -604,7 +606,7 @@ class ParticleTextEngine {
   }
 
   /**
-   * Sets up mouse event handlers.
+   * Sets up mouse and touch event handlers.
    */
   setupMouse() {
     // Track mouse position.
@@ -631,6 +633,47 @@ class ParticleTextEngine {
 
     // Handle mouse leaving canvas.
     this.canvas.addEventListener("mouseleave", (e) => {
+      this.isMouseDown = false;
+      this.isMouseOverCanvas = false;
+    });
+
+    // Touch event handlers:
+    // - Tap: Immediate hover effect (particles change color)
+    // - Drag: Triggers mousedown effect (particles pushed away; canvas cleared)
+    this.canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault(); // Prevent scrolling and other default behaviors.
+      const rect = this.canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      this.mouseX = touch.clientX - rect.left;
+      this.mouseY = touch.clientY - rect.top;
+      this.isTouching = true;
+      this.isMouseOverCanvas = true;
+      // Note: `isMouseDown` stays false on touch start.
+      // Only hover effect.
+    });
+
+    // Dragging triggers the mouse down effect.
+    this.canvas.addEventListener("touchmove", (e) => {
+      e.preventDefault(); // Prevent scrolling.
+      const rect = this.canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      this.mouseX = touch.clientX - rect.left;
+      this.mouseY = touch.clientY - rect.top;
+      this.isMouseDown = true;
+    });
+
+    // Reset touch and mouse states.
+    this.canvas.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      this.isTouching = false;
+      this.isMouseDown = false;
+      this.isMouseOverCanvas = false;
+    });
+
+    // Reset states.
+    this.canvas.addEventListener("touchcancel", (e) => {
+      e.preventDefault();
+      this.isTouching = false;
       this.isMouseDown = false;
       this.isMouseOverCanvas = false;
     });
@@ -715,11 +758,11 @@ class ParticleTextEngine {
   }
 
   /**
-   * Checks if the mouse is currently on screen.
-   * @returns {boolean} True if mouse is over the canvas.
+   * Checks if the mouse or touch is currently on screen.
+   * @returns {boolean} True if mouse is over the canvas or touch is active.
    */
   isMouseOnScreen() {
-    return this.isMouseOverCanvas;
+    return this.isMouseOverCanvas || this.isTouching;
   }
 
   /**
@@ -990,6 +1033,19 @@ class ParticleTextEngine {
         `Particles: ${this.particles.length}`,
         `Debug: On`
       );
+
+      // Show interaction state.
+      if (this.isTouching) {
+        debugInfo.push(`Touch: Active`);
+        if (this.isMouseDown) {
+          debugInfo.push(`Touch: Dragging`);
+        }
+      } else if (this.isMouseOverCanvas) {
+        debugInfo.push(`Mouse: Hover`);
+        if (this.isMouseDown) {
+          debugInfo.push(`Mouse: Down`);
+        }
+      }
     }
 
     this.debugOverlay.innerHTML = debugInfo.join("<br>");
