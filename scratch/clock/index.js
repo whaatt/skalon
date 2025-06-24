@@ -457,6 +457,7 @@ class ParticleTextEngine {
     this.textBounds = null;
     this.maxParticles = ENGINE_CONFIG.MAX_PARTICLES;
     this.showDebug = false;
+    this.showShortcuts = this.loadShortcutsPreference();
     /** @type {HTMLCanvasElement|null} */
     this.debugCanvas = null;
 
@@ -534,6 +535,9 @@ class ParticleTextEngine {
         this.isHighTrailFade = !this.isHighTrailFade;
         this.saveTrailFadePreference();
         this.clearCanvas();
+      } else if (e.key.toLowerCase() === "h" && !this.showDebug) {
+        this.showShortcuts = !this.showShortcuts;
+        this.saveShortcutsPreference();
       }
     });
   }
@@ -580,6 +584,28 @@ class ParticleTextEngine {
    */
   saveTrailFadePreference() {
     localStorage.setItem("trailFade", this.isHighTrailFade.toString());
+  }
+
+  /**
+   * Loads shortcuts preference from `localStorage`.
+   * @returns {boolean} True to show shortcuts; false to hide them.
+   */
+  loadShortcutsPreference() {
+    // Check `localStorage` first.
+    const stored = localStorage.getItem("showShortcuts");
+    if (stored !== null) {
+      return stored === "true";
+    }
+
+    // Default to showing shortcuts.
+    return true;
+  }
+
+  /**
+   * Saves shortcuts preference to `localStorage`.
+   */
+  saveShortcutsPreference() {
+    localStorage.setItem("showShortcuts", this.showShortcuts.toString());
   }
 
   /**
@@ -1046,6 +1072,10 @@ class ParticleTextEngine {
           debugInfo.push(`Mouse: Down`);
         }
       }
+    } else if (this.showShortcuts) {
+      debugInfo.push(`[M] = Toggle Light`);
+      debugInfo.push(`[F] = Toggle Fade`);
+      debugInfo.push(`[H] = Toggle Info`);
     }
 
     this.debugOverlay.innerHTML = debugInfo.join("<br>");
