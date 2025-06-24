@@ -584,8 +584,8 @@ class ParticleTextEngine {
       return stored === "true";
     }
 
-    // Default to high trail fade.
-    return true;
+    // Default to low trail fade.
+    return false;
   }
 
   /**
