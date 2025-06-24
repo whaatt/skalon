@@ -34,10 +34,12 @@ const DISPLAY_PARAMS = {
 
 // Physics and behavior constants.
 const PHYSICS_PARAMS = {
-  SPAWN_PROBABILITY_IN_BOUNDING_BOX: 0,
+  SPAWN_PROBABILITY_IN_BOUNDING_BOX: 0.05,
+  SPAWN_PROBABILITY_IN_BOUNDING_BOX_FADE: 0.95,
   BASE_VELOCITY_PIXELS_PER_FRAME: 5,
+  BASE_VELOCITY_PIXELS_PER_FRAME_FADE: 0.5,
   MAX_VELOCITY_PIXELS_PER_FRAME: 10,
-  BOUNCE_THRESHOLD_FRAMES: 1,
+  BOUNCE_THRESHOLD_FRAMES: 0,
   MAX_BOUNCES_UNTIL_DEATH: 20,
   OFF_SCREEN_DEATH_MARGIN: 10,
   RANDOM_ACCELERATION_STRENGTH: 0.1,
@@ -45,12 +47,14 @@ const PHYSICS_PARAMS = {
   EXPELLED_FADE_FRAMES: 600, // Frames over which expelled particles fade out.
   ATTRACTION_FORCE_STRENGTH: 2,
   ATTRACTOR_CACHE_FRAMES: 600, // How long to keep same attractor point.
-  MOUSE_FORCE_STRENGTH: 5, // Strength of mouse interaction force.
+  MOUSE_FORCE_STRENGTH: 500, // Strength of mouse interaction force.
   MOUSE_FORCE_RADIUS_MULTIPLIER: 0.5, // Mouse radius as ratio of font size.
 };
 
 // Engine configuration constants.
 const ENGINE_CONFIG = {
+  PARTICLE_SIZE: 1,
+  PARTICLE_SIZE_FADE: 2,
   DEFAULT_FONT_SIZE_WIDTH_MULTIPLIER: 0.15,
   DEFAULT_TEXT: "Hello\nWorld",
   LINE_HEIGHT_MULTIPLIER: 1,
@@ -67,14 +71,18 @@ class Particle {
    * Creates a new particle.
    * @param {number} x - Initial x position.
    * @param {number} y - Initial y position.
+   * @param {ParticleTextEngine} engine - Reference to the text engine instance.
    */
-  constructor(x, y) {
+  constructor(x, y, engine) {
     this.x = x;
     this.y = y;
-    this.vx =
-      (Math.random() - 0.5) * 2 * PHYSICS_PARAMS.BASE_VELOCITY_PIXELS_PER_FRAME;
-    this.vy =
-      (Math.random() - 0.5) * 2 * PHYSICS_PARAMS.BASE_VELOCITY_PIXELS_PER_FRAME;
+    this.engine = engine;
+    // Use different base velocities based on trail fade setting.
+    const baseVelocity = engine.isHighTrailFade
+      ? PHYSICS_PARAMS.BASE_VELOCITY_PIXELS_PER_FRAME_FADE
+      : PHYSICS_PARAMS.BASE_VELOCITY_PIXELS_PER_FRAME;
+    this.vx = (Math.random() - 0.5) * 2 * baseVelocity;
+    this.vy = (Math.random() - 0.5) * 2 * baseVelocity;
     this.color = this.getRandomColor();
     this.bounces = 0;
     this.maxBounces = PHYSICS_PARAMS.MAX_BOUNCES_UNTIL_DEATH;
@@ -95,6 +103,12 @@ class Particle {
     this.attractorCacheFrames = 0;
   }
 
+  get size() {
+    return this.engine.isHighTrailFade
+      ? ENGINE_CONFIG.PARTICLE_SIZE_FADE
+      : ENGINE_CONFIG.PARTICLE_SIZE;
+  }
+
   /**
    * Gets a random color from the particle color palette.
    * @returns {string} A hex color string.
@@ -106,10 +120,9 @@ class Particle {
 
   /**
    * Updates the particle's position and state.
-   * @param {ParticleTextEngine} engine - The text engine instance.
    * @returns {boolean} True if particle is still alive; false otherwise.
    */
-  update(engine) {
+  update() {
     // If particle is expelled, just move it and don't apply other logic.
     if (this.isExpelled) {
       this.expelledFrames++; // Increment expelled frame counter.
@@ -120,9 +133,9 @@ class Particle {
       const margin = PHYSICS_PARAMS.OFF_SCREEN_DEATH_MARGIN * 5;
       if (
         this.x < -margin ||
-        this.x > engine.canvas.width + margin ||
+        this.x > this.engine.canvas.width + margin ||
         this.y < -margin ||
-        this.y > engine.canvas.height + margin
+        this.y > this.engine.canvas.height + margin
       ) {
         return false; // Particle is dead, needs respawning.
       }
@@ -134,13 +147,13 @@ class Particle {
     const oldY = this.y;
 
     // Apply subtle attractive force toward text boundaries.
-    this.applyTextAttraction(engine);
+    this.applyTextAttraction();
 
     // Apply strong expulsive force if overlapping text.
-    this.applyTextExpulsion(engine);
+    this.applyTextExpulsion();
 
     // Apply mouse interaction force if mouse is pressed.
-    this.applyMouseForce(engine);
+    this.applyMouseForce();
 
     // Add random unit acceleration for curved motion (not when expelled).
     if (!this.isExpelled) {
@@ -165,14 +178,14 @@ class Particle {
     const isCurrentlyInsideText = this.isInsideText(
       this.x,
       this.y,
-      engine.textBounds,
-      engine.particleSize
+      this.engine.textBounds,
+      this.size
     );
     const wasInsideText = this.isInsideText(
       oldX,
       oldY,
-      engine.textBounds,
-      engine.particleSize
+      this.engine.textBounds,
+      this.size
     );
 
     if (isCurrentlyInsideText) {
@@ -218,9 +231,9 @@ class Particle {
     const margin = PHYSICS_PARAMS.OFF_SCREEN_DEATH_MARGIN;
     if (
       this.x < -margin ||
-      this.x > engine.canvas.width + margin ||
+      this.x > this.engine.canvas.width + margin ||
       this.y < -margin ||
-      this.y > engine.canvas.height + margin
+      this.y > this.engine.canvas.height + margin
     ) {
       return false; // Particle is dead, needs respawning.
     }
@@ -236,7 +249,7 @@ class Particle {
    * @param {number} particleSize - Size of the particle.
    * @returns {boolean} True if inside text; false otherwise.
    */
-  isInsideText(x, y, textBounds, particleSize = 1) {
+  isInsideText(x, y, textBounds, particleSize) {
     if (!textBounds) return false;
 
     const imageData = textBounds.data;
@@ -269,10 +282,9 @@ class Particle {
 
   /**
    * Applies attractive force toward text boundaries.
-   * @param {ParticleTextEngine} engine - The text engine instance.
    */
-  applyTextAttraction(engine) {
-    const bounds = engine.getTextBounds();
+  applyTextAttraction() {
+    const bounds = this.engine.getTextBounds();
 
     // Update cached attractor point if needed.
     if (this.attractorCacheFrames <= 0) {
@@ -307,9 +319,8 @@ class Particle {
 
   /**
    * Applies expulsive force when overlapping with text.
-   * @param {ParticleTextEngine} engine - The text engine instance.
    */
-  applyTextExpulsion(engine) {
+  applyTextExpulsion() {
     // Only expel if particle was trapped by text change and not already
     // expelled.
     if (this.wasTrappedByTextChange && !this.isExpelled) {
@@ -328,21 +339,20 @@ class Particle {
 
   /**
    * Applies mouse interaction force.
-   * @param {ParticleTextEngine} engine - The text engine instance.
    */
-  applyMouseForce(engine) {
+  applyMouseForce() {
     // Only apply force if particle is not expelled.
     if (this.isExpelled) {
       return;
     }
 
     // Calculate distance from particle to mouse.
-    const dx = this.x - engine.mouseX;
-    const dy = this.y - engine.mouseY;
+    const dx = this.x - this.engine.mouseX;
+    const dy = this.y - this.engine.mouseY;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     // Get dynamic mouse force radius.
-    const mouseRadius = engine.getMouseForceRadius();
+    const mouseRadius = this.engine.getMouseForceRadius();
 
     // Apply force only if particle is within influence radius.
     if (distance < mouseRadius && distance > 0) {
@@ -350,7 +360,7 @@ class Particle {
       const forceStrength =
         PHYSICS_PARAMS.MOUSE_FORCE_STRENGTH * (1 - distance / mouseRadius);
 
-      if (engine.isMouseDown) {
+      if (this.engine.isMouseDown) {
         // Mouse button down: Apply outward expulsive force.
         const forceX = (dx / distance) * forceStrength;
         const forceY = (dy / distance) * forceStrength;
@@ -366,9 +376,8 @@ class Particle {
   /**
    * Draws the particle on the canvas.
    * @param {CanvasRenderingContext2D} ctx - Canvas 2D context.
-   * @param {ParticleTextEngine} engine - The text engine instance.
    */
-  draw(ctx, engine) {
+  draw(ctx) {
     let fillColor;
 
     // Handle expelled particles with fade-out effect.
@@ -389,10 +398,10 @@ class Particle {
       const expelledColors = this.isInsideText(
         this.x,
         this.y,
-        engine.textBounds,
-        engine.particleSize
+        this.engine.textBounds,
+        this.size
       )
-        ? engine.isLightMode
+        ? this.engine.isLightMode
           ? DISPLAY_PARAMS.EXPELLED_COLORS_FOREGROUND_LIGHT_MODE
           : DISPLAY_PARAMS.EXPELLED_COLORS_FOREGROUND
         : DISPLAY_PARAMS.EXPELLED_COLORS_BACKGROUND;
@@ -408,24 +417,19 @@ class Particle {
 
     // Check if particle should be gray (mouse hovering but not pressed and on
     // screen).
-    if (!engine.isMouseDown && engine.cachedIsMouseOnScreen) {
-      const dx = this.x - engine.mouseX;
-      const dy = this.y - engine.mouseY;
+    if (!this.engine.isMouseDown && this.engine.cachedIsMouseOnScreen) {
+      const dx = this.x - this.engine.mouseX;
+      const dy = this.y - this.engine.mouseY;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (distance < engine.cachedMouseForceRadius) {
+      if (distance < this.engine.cachedMouseForceRadius) {
         // Dark gray for light mode and light gray for dark mode.
-        fillColor = engine.isLightMode ? "#BA8E23" : "#C0C0C0";
+        fillColor = this.engine.isLightMode ? "#BA8E23" : "#C0C0C0";
       }
     }
 
     ctx.fillStyle = fillColor;
-    ctx.fillRect(
-      Math.floor(this.x),
-      Math.floor(this.y),
-      engine.particleSize,
-      engine.particleSize
-    );
+    ctx.fillRect(Math.floor(this.x), Math.floor(this.y), this.size, this.size);
 
     // Restore canvas state if we modified it for expelled particles.
     if (this.isExpelled) {
@@ -449,7 +453,6 @@ class ParticleTextEngine {
     this.ctx = ctx;
     /** @type {Particle[]} */
     this.particles = [];
-    this.particleSize = 1;
     this.text = ENGINE_CONFIG.DEFAULT_TEXT;
     this.fontSize = () =>
       window.innerWidth * ENGINE_CONFIG.DEFAULT_FONT_SIZE_WIDTH_MULTIPLIER;
@@ -476,6 +479,9 @@ class ParticleTextEngine {
     // Trail fade state.
     this.isHighTrailFade = this.loadTrailFadePreference();
 
+    // Show seconds state.
+    this.showSeconds = this.loadShowSecondsPreference();
+
     // Cached mouse interaction values for performance.
     this.cachedMouseForceRadius = 0;
     this.cachedIsMouseOnScreen = false;
@@ -500,7 +506,7 @@ class ParticleTextEngine {
     this.updateBodyBackground();
 
     // Set the initial clock text BEFORE spawning particles.
-    this.updateText(getCurrentDateTime());
+    this.updateText(getCurrentDateTime(this.showSeconds));
     this.spawnAllParticles(); // Spawn all particles immediately.
     this.animate();
   }
@@ -538,6 +544,9 @@ class ParticleTextEngine {
       } else if (e.key.toLowerCase() === "h" && !this.showDebug) {
         this.showShortcuts = !this.showShortcuts;
         this.saveShortcutsPreference();
+      } else if (e.key.toLowerCase() === "s") {
+        this.showSeconds = !this.showSeconds;
+        this.saveShowSecondsPreference();
       }
     });
   }
@@ -609,11 +618,33 @@ class ParticleTextEngine {
   }
 
   /**
+   * Loads show seconds preference from `localStorage`.
+   * @returns {boolean} True to show seconds; false to hide them.
+   */
+  loadShowSecondsPreference() {
+    // Check `localStorage` first.
+    const stored = localStorage.getItem("showSeconds");
+    if (stored !== null) {
+      return stored === "true";
+    }
+
+    // Default to showing seconds.
+    return true;
+  }
+
+  /**
+   * Saves show seconds preference to `localStorage`.
+   */
+  saveShowSecondsPreference() {
+    localStorage.setItem("showSeconds", this.showSeconds.toString());
+  }
+
+  /**
    * Gets the current trail fade alpha value based on preference.
    * @returns {number} Trail fade alpha value.
    */
   getTrailFadeAlpha() {
-    return this.isHighTrailFade ? 0.01 : 0.0001;
+    return this.isHighTrailFade ? 1 : 0.0001;
   }
 
   /**
@@ -846,7 +877,7 @@ class ParticleTextEngine {
           particle.x,
           particle.y,
           this.textBounds,
-          this.particleSize
+          particle.size
         )
       ) {
         particle.wasTrappedByTextChange = true;
@@ -878,8 +909,9 @@ class ParticleTextEngine {
     const ratio = bounds.area / screenArea;
 
     // Use simplified spawn probability.
-    const boundingBoxSpawnProbability =
-      PHYSICS_PARAMS.SPAWN_PROBABILITY_IN_BOUNDING_BOX;
+    const boundingBoxSpawnProbability = this.isHighTrailFade
+      ? PHYSICS_PARAMS.SPAWN_PROBABILITY_IN_BOUNDING_BOX_FADE
+      : PHYSICS_PARAMS.SPAWN_PROBABILITY_IN_BOUNDING_BOX;
 
     if (Math.random() < boundingBoxSpawnProbability) {
       // Spawn inside text bounding box but not overlapping glyphs.
@@ -888,7 +920,7 @@ class ParticleTextEngine {
       // Spawn elsewhere on screen.
       const x = Math.random() * this.canvas.width;
       const y = Math.random() * this.canvas.height;
-      return new Particle(x, y);
+      return new Particle(x, y, this);
     }
   }
 
@@ -911,7 +943,7 @@ class ParticleTextEngine {
     const x = boxLeft + Math.random() * (boxRight - boxLeft);
     const y = boxTop + Math.random() * (boxBottom - boxTop);
 
-    return new Particle(x, y);
+    return new Particle(x, y, this);
   }
 
   /**
@@ -925,7 +957,7 @@ class ParticleTextEngine {
 
     // Update particles and handle respawning.
     for (let i = 0; i < this.particles.length; i++) {
-      if (!this.particles[i].update(this)) {
+      if (!this.particles[i].update()) {
         // Particle went off screen; replace with new one.
         this.particles[i] = this.spawnSingleParticle();
       }
@@ -961,7 +993,7 @@ class ParticleTextEngine {
     }
 
     // Draw particles.
-    this.particles.forEach((particle) => particle.draw(this.ctx, this));
+    this.particles.forEach((particle) => particle.draw(this.ctx));
 
     // Optional: Draw debug text bounds.
     if (this.showDebug && this.debugCanvas) {
@@ -1075,6 +1107,7 @@ class ParticleTextEngine {
     } else if (this.showShortcuts) {
       debugInfo.push(`[M] = Toggle Light`);
       debugInfo.push(`[F] = Toggle Fade`);
+      debugInfo.push(`[S] = Toggle Seconds`);
       debugInfo.push(`[H] = Toggle Info`);
     }
 
@@ -1101,9 +1134,10 @@ const engine = new ParticleTextEngine(canvas);
 
 /**
  * Formats the current date and time for display.
+ * @param {boolean} showSeconds - Whether to show seconds.
  * @returns {string} Formatted date and time string.
  */
-function getCurrentDateTime() {
+function getCurrentDateTime(showSeconds) {
   const now = new Date();
 
   // Format date as YYYY-MM-DD.
@@ -1116,7 +1150,7 @@ function getCurrentDateTime() {
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
   const seconds = String(now.getSeconds()).padStart(2, "0");
-  const time = `${hours}:${minutes}:${seconds}`;
+  const time = `${hours}:${minutes}${showSeconds ? `:${seconds}` : ""}`;
 
   return `${date}\n${time}`;
 }
@@ -1125,7 +1159,7 @@ function getCurrentDateTime() {
  * Updates the clock display with current date and time.
  */
 function updateClock() {
-  const dateTimeText = getCurrentDateTime();
+  const dateTimeText = getCurrentDateTime(engine.showSeconds);
   engine.updateText(dateTimeText);
 }
 
