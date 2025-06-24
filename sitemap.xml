@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://skalon.com</loc>
-    <lastmod>2025-03-25</lastmod>
+    <lastmod>2025-06-24</lastmod>
   </url>
   <url>
     <loc>https://skalon.com/2018/05/01/</loc>
@@ -41,8 +41,12 @@
     <lastmod>2024-02-06</lastmod>
   </url>
   <url>
+    <loc>https://skalon.com/2025/04/21/</loc>
+    <lastmod>2025-05-05</lastmod>
+  </url>
+  <url>
     <loc>https://skalon.com/scratch/</loc>
-    <lastmod>2025-03-25</lastmod>
+    <lastmod>2025-06-24</lastmod>
   </url>
   <url>
     <loc>https://skalon.com/scratch/ants/</loc>
@@ -53,7 +57,7 @@
     <lastmod>2025-03-25</lastmod>
   </url>
   <url>
-    <loc>https://skalon.com/2025/04/21/</loc>
-    <lastmod>2025-05-05</lastmod>
+    <loc>https://skalon.com/scratch/clock/</loc>
+    <lastmod>2025-06-24</lastmod>
   </url>
 </urlset>
