@@ -34,33 +34,35 @@ const DISPLAY_PARAMS = {
 
 // Physics and behavior constants.
 const PHYSICS_PARAMS = {
+  FONT_SIZE_BASE_FOR_PIXELS_PER_FRAME: 200,
   SPAWN_PROBABILITY_IN_BOUNDING_BOX: 0.05,
   SPAWN_PROBABILITY_IN_BOUNDING_BOX_FADE: 0.95,
-  BASE_VELOCITY_PIXELS_PER_FRAME: 5,
+  // These values are not adjusted for font size.
+  BASE_VELOCITY_PIXELS_PER_FRAME: 3,
   BASE_VELOCITY_PIXELS_PER_FRAME_FADE: 0.5,
   MAX_VELOCITY_PIXELS_PER_FRAME: 10,
   BOUNCE_THRESHOLD_FRAMES: 0,
-  MAX_BOUNCES_UNTIL_DEATH: 20,
+  BOUNCE_THRESHOLD_FRAMES_FADE: 0,
+  MAX_BOUNCES_UNTIL_DEATH: 50,
   OFF_SCREEN_DEATH_MARGIN: 10,
   RANDOM_ACCELERATION_STRENGTH: 0.1,
-  EXPULSION_STRENGTH_PIXELS_PER_FRAME: 1,
+  EXPULSION_STRENGTH_PIXELS_PER_FRAME: 2,
   EXPELLED_FADE_FRAMES: 600, // Frames over which expelled particles fade out.
-  ATTRACTION_FORCE_STRENGTH: 2,
+  ATTRACTION_FORCE_STRENGTH_PIXELS: 2,
   ATTRACTOR_CACHE_FRAMES: 600, // How long to keep same attractor point.
-  MOUSE_FORCE_STRENGTH: 500, // Strength of mouse interaction force.
+  MOUSE_FORCE_STRENGTH: 50, // Strength of mouse interaction force.
   MOUSE_FORCE_RADIUS_MULTIPLIER: 0.5, // Mouse radius as ratio of font size.
 };
 
 // Engine configuration constants.
 const ENGINE_CONFIG = {
-  PARTICLE_SIZE: 1,
-  PARTICLE_SIZE_FADE: 2,
-  DEFAULT_FONT_SIZE_WIDTH_MULTIPLIER: 0.15,
   DEFAULT_TEXT: "Hello\nWorld",
+  DEFAULT_FONT_SIZE_WIDTH_MULTIPLIER: 0.15,
+  PADDING_PERCENT_OF_CANVAS: 0.1,
   LINE_HEIGHT_MULTIPLIER: 1,
-  MAX_PARTICLES: 30000,
-  PADDING_PERCENT_OF_CANVAS: 0.1, // 10% of canvas dimensions.
   TEXT_LEFT_POSITION: 50,
+  MAX_PARTICLES: 30000,
+  PARTICLE_SIZE_NO_FADE: 1,
 };
 
 /**
@@ -77,20 +79,16 @@ class Particle {
     this.x = x;
     this.y = y;
     this.engine = engine;
-    // Use different base velocities based on trail fade setting.
-    const baseVelocity = engine.isHighTrailFade
-      ? PHYSICS_PARAMS.BASE_VELOCITY_PIXELS_PER_FRAME_FADE
-      : PHYSICS_PARAMS.BASE_VELOCITY_PIXELS_PER_FRAME;
-    this.vx = (Math.random() - 0.5) * 2 * baseVelocity;
-    this.vy = (Math.random() - 0.5) * 2 * baseVelocity;
+    this.vx = (Math.random() - 0.5) * 2 * this.baseVelocity;
+    this.vy = (Math.random() - 0.5) * 2 * this.baseVelocity;
     this.color = this.getRandomColor();
+    // Track bounces.
     this.bounces = 0;
     this.maxBounces = PHYSICS_PARAMS.MAX_BOUNCES_UNTIL_DEATH;
     // Store original speed.
-    this.speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+    this.initialSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
     // Track how long particle has been inside text.
     this.incursionFrames = 0;
-    this.bounceThreshold = PHYSICS_PARAMS.BOUNCE_THRESHOLD_FRAMES;
     // True if particle was trapped by text changing.
     this.wasTrappedByTextChange = false;
     // True if particle has been expelled and should fly off screen.
@@ -105,8 +103,20 @@ class Particle {
 
   get size() {
     return this.engine.isHighTrailFade
-      ? ENGINE_CONFIG.PARTICLE_SIZE_FADE
-      : ENGINE_CONFIG.PARTICLE_SIZE;
+      ? Math.max(1, Math.min(3, Math.floor(this.engine.fontSize() * 0.025)))
+      : ENGINE_CONFIG.PARTICLE_SIZE_NO_FADE;
+  }
+
+  get baseVelocity() {
+    return this.engine.isHighTrailFade
+      ? PHYSICS_PARAMS.BASE_VELOCITY_PIXELS_PER_FRAME_FADE
+      : PHYSICS_PARAMS.BASE_VELOCITY_PIXELS_PER_FRAME;
+  }
+
+  get bounceThreshold() {
+    return this.engine.isHighTrailFade
+      ? PHYSICS_PARAMS.BOUNCE_THRESHOLD_FRAMES_FADE
+      : PHYSICS_PARAMS.BOUNCE_THRESHOLD_FRAMES;
   }
 
   /**
@@ -152,36 +162,34 @@ class Particle {
     // Apply strong expulsive force if overlapping text.
     this.applyTextExpulsion();
 
+    // Add random unit acceleration for curved motion (not when expelled).
+    const randomAngle = Math.random() * Math.PI * 2;
+    const accelStrength = PHYSICS_PARAMS.RANDOM_ACCELERATION_STRENGTH;
+    this.vx += Math.cos(randomAngle) * accelStrength;
+    this.vy += Math.sin(randomAngle) * accelStrength;
+
+    // Normalize velocity to maintain constant speed.
+    const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+    if (currentSpeed > 0) {
+      this.vx = (this.vx / currentSpeed) * this.initialSpeed;
+      this.vy = (this.vy / currentSpeed) * this.initialSpeed;
+    }
+
     // Apply mouse interaction force if mouse is pressed.
     this.applyMouseForce();
-
-    // Add random unit acceleration for curved motion (not when expelled).
-    if (!this.isExpelled) {
-      const randomAngle = Math.random() * Math.PI * 2;
-      const accelStrength = PHYSICS_PARAMS.RANDOM_ACCELERATION_STRENGTH;
-      this.vx += Math.cos(randomAngle) * accelStrength;
-      this.vy += Math.sin(randomAngle) * accelStrength;
-
-      // Normalize velocity to maintain constant speed.
-      const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-      if (currentSpeed > 0) {
-        this.vx = (this.vx / currentSpeed) * this.speed;
-        this.vy = (this.vy / currentSpeed) * this.speed;
-      }
-    }
 
     // Update position.
     this.x += this.vx;
     this.y += this.vy;
 
     // Check collision with text bounds.
-    const isCurrentlyInsideText = this.isInsideText(
+    const isCurrentlyInsideText = Particle.isInsideText(
       this.x,
       this.y,
       this.engine.textBounds,
       this.size
     );
-    const wasInsideText = this.isInsideText(
+    const wasInsideText = Particle.isInsideText(
       oldX,
       oldY,
       this.engine.textBounds,
@@ -209,9 +217,6 @@ class Particle {
         // Simple bounce; reverse direction with some randomness.
         this.vx = -this.vx + (Math.random() - 0.5) * 2;
         this.vy = -this.vy + (Math.random() - 0.5) * 2;
-
-        // Reset incursion counter after bounce (normal behavior).
-        this.incursionFrames = 0;
 
         // Increment bounce counter.
         this.bounces++;
@@ -249,7 +254,7 @@ class Particle {
    * @param {number} particleSize - Size of the particle.
    * @returns {boolean} True if inside text; false otherwise.
    */
-  isInsideText(x, y, textBounds, particleSize) {
+  static isInsideText(x, y, textBounds, particleSize) {
     if (!textBounds) return false;
 
     const imageData = textBounds.data;
@@ -302,7 +307,10 @@ class Particle {
 
     // Apply simple distance-based force.
     const force =
-      PHYSICS_PARAMS.ATTRACTION_FORCE_STRENGTH * (1 / (distance * 0.1 + 1));
+      PHYSICS_PARAMS.ATTRACTION_FORCE_STRENGTH_PIXELS *
+      (this.engine.fontSize() /
+        PHYSICS_PARAMS.FONT_SIZE_BASE_FOR_PIXELS_PER_FRAME) *
+      (1 / (distance * 0.1 + 1));
 
     // Apply force toward attraction point.
     this.vx += (dx / distance) * force;
@@ -318,22 +326,40 @@ class Particle {
   }
 
   /**
-   * Applies expulsive force when overlapping with text.
+   * Handles particles trapped by text changes by respawning them.
    */
   applyTextExpulsion() {
-    // Only expel if particle was trapped by text change and not already
-    // expelled.
+    // If particle was trapped by text change, expel it and add a particle.
     if (this.wasTrappedByTextChange && !this.isExpelled) {
+      // Set expelled state.
+      this.isExpelled = true;
+      // TODO: Understand why this changes behavior. Does it?
+      this.wasTrappedByTextChange = false;
+
       // Blast particle in negative direction with extreme force.
       const currentAngle = Math.atan2(this.vy, this.vx);
       const expulsionStrength =
-        PHYSICS_PARAMS.EXPULSION_STRENGTH_PIXELS_PER_FRAME;
+        PHYSICS_PARAMS.EXPULSION_STRENGTH_PIXELS_PER_FRAME *
+        (this.engine.fontSize() /
+          PHYSICS_PARAMS.FONT_SIZE_BASE_FOR_PIXELS_PER_FRAME);
+      this.vx = Math.cos(currentAngle) * expulsionStrength;
+      this.vy = Math.sin(currentAngle) * expulsionStrength;
 
-      this.vx = -Math.cos(currentAngle) * expulsionStrength;
-      this.vy = -Math.sin(currentAngle) * expulsionStrength;
+      // IGNORED: Create a smaller bounding box around the current particle
+      // position.
+      // const localRadius = this.engine.fontSize() * 0.05;
+      // const localBounds = {
+      //   left: Math.max(0, this.x - localRadius),
+      //   right: Math.min(this.engine.canvas.width, this.x + localRadius),
+      //   top: Math.max(0, this.y - localRadius),
+      //   bottom: Math.min(this.engine.canvas.height, this.y + localRadius),
+      // };
 
-      // Mark as expelled; particle will now fly off screen autonomously.
-      this.isExpelled = true;
+      // IGNORED: Spawn a new particle with local bounds.
+      // const newParticle = this.engine.spawnInTextBoundingBox(localBounds);
+      // if (newParticle) {
+      //   this.engine.particles.add(newParticle);
+      // }
     }
   }
 
@@ -395,7 +421,7 @@ class Particle {
       }
 
       // Use expelled color for expelled particles.
-      const expelledColors = this.isInsideText(
+      const expelledColors = Particle.isInsideText(
         this.x,
         this.y,
         this.engine.textBounds,
@@ -417,12 +443,12 @@ class Particle {
 
     // Check if particle should be gray (mouse hovering but not pressed and on
     // screen).
-    if (!this.engine.isMouseDown && this.engine.cachedIsMouseOnScreen) {
+    if (!this.engine.isMouseDown && this.engine.isMouseOnScreen()) {
       const dx = this.x - this.engine.mouseX;
       const dy = this.y - this.engine.mouseY;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (distance < this.engine.cachedMouseForceRadius) {
+      if (distance < this.engine.getMouseForceRadius()) {
         // Dark gray for light mode and light gray for dark mode.
         fillColor = this.engine.isLightMode ? "#BA8E23" : "#C0C0C0";
       }
@@ -451,11 +477,12 @@ class ParticleTextEngine {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Could not get 2D context");
     this.ctx = ctx;
-    /** @type {Particle[]} */
-    this.particles = [];
+    /** @type {Set<Particle>} */
+    this.particles = new Set();
     this.text = ENGINE_CONFIG.DEFAULT_TEXT;
+    this.cachedInnerWidth = window.innerWidth;
     this.fontSize = () =>
-      window.innerWidth * ENGINE_CONFIG.DEFAULT_FONT_SIZE_WIDTH_MULTIPLIER;
+      this.cachedInnerWidth * ENGINE_CONFIG.DEFAULT_FONT_SIZE_WIDTH_MULTIPLIER;
     /** @type {ImageDataLike|null} */
     this.textBounds = null;
     this.maxParticles = ENGINE_CONFIG.MAX_PARTICLES;
@@ -482,10 +509,6 @@ class ParticleTextEngine {
     // Show seconds state.
     this.showSeconds = this.loadShowSecondsPreference();
 
-    // Cached mouse interaction values for performance.
-    this.cachedMouseForceRadius = 0;
-    this.cachedIsMouseOnScreen = false;
-
     // FPS tracking.
     this.lastFrameTime = performance.now();
     this.frameCount = 0;
@@ -507,7 +530,7 @@ class ParticleTextEngine {
 
     // Set the initial clock text BEFORE spawning particles.
     this.updateText(getCurrentDateTime(this.showSeconds));
-    this.spawnAllParticles(); // Spawn all particles immediately.
+    this.spawnAllParticles();
     this.animate();
   }
 
@@ -519,7 +542,8 @@ class ParticleTextEngine {
     this.canvas.height = window.innerHeight;
 
     window.addEventListener("resize", () => {
-      this.canvas.width = window.innerWidth;
+      this.cachedInnerWidth = window.innerWidth;
+      this.canvas.width = this.cachedInnerWidth;
       this.canvas.height = window.innerHeight;
       this.updateTextBounds();
     });
@@ -537,10 +561,12 @@ class ParticleTextEngine {
         this.saveLightModePreference();
         this.updateBodyBackground();
         this.clearCanvas();
+        this.spawnAllParticles();
       } else if (e.key.toLowerCase() === "f") {
         this.isHighTrailFade = !this.isHighTrailFade;
         this.saveTrailFadePreference();
         this.clearCanvas();
+        this.spawnAllParticles();
       } else if (e.key.toLowerCase() === "h" && !this.showDebug) {
         this.showShortcuts = !this.showShortcuts;
         this.saveShortcutsPreference();
@@ -873,7 +899,7 @@ class ParticleTextEngine {
     this.particles.forEach((particle) => {
       if (
         particle.incursionFrames === 0 && // Only particles not inside.
-        particle.isInsideText(
+        Particle.isInsideText(
           particle.x,
           particle.y,
           this.textBounds,
@@ -881,7 +907,6 @@ class ParticleTextEngine {
         )
       ) {
         particle.wasTrappedByTextChange = true;
-        particle.incursionFrames = 0; // Reset for immediate expulsion.
       }
     });
   }
@@ -890,11 +915,9 @@ class ParticleTextEngine {
    * Spawns all particles at once.
    */
   spawnAllParticles() {
-    // Create all particles at once.
-    this.particles = [];
-
+    this.particles.clear();
     for (let i = 0; i < this.maxParticles; i++) {
-      this.particles.push(this.spawnSingleParticle());
+      this.particles.add(this.spawnSingleParticle());
     }
   }
 
@@ -903,34 +926,30 @@ class ParticleTextEngine {
    * @returns {Particle} A new particle instance.
    */
   spawnSingleParticle() {
-    // Calculate bounding box to screen ratio with padding.
-    const bounds = this.getTextBounds();
-    const screenArea = this.canvas.width * this.canvas.height;
-    const ratio = bounds.area / screenArea;
-
     // Use simplified spawn probability.
     const boundingBoxSpawnProbability = this.isHighTrailFade
       ? PHYSICS_PARAMS.SPAWN_PROBABILITY_IN_BOUNDING_BOX_FADE
       : PHYSICS_PARAMS.SPAWN_PROBABILITY_IN_BOUNDING_BOX;
 
+    // Spawn inside text bounding box but not overlapping glyphs.
     if (Math.random() < boundingBoxSpawnProbability) {
-      // Spawn inside text bounding box but not overlapping glyphs.
-      return this.spawnInTextBoundingBox();
-    } else {
-      // Spawn elsewhere on screen.
-      const x = Math.random() * this.canvas.width;
-      const y = Math.random() * this.canvas.height;
-      return new Particle(x, y, this);
+      const newParticle = this.spawnInTextBoundingBox();
+      if (newParticle) {
+        return newParticle;
+      }
     }
+
+    // Spawn elsewhere on screen.
+    const x = Math.random() * this.canvas.width;
+    const y = Math.random() * this.canvas.height;
+    return new Particle(x, y, this);
   }
 
   /**
    * Spawns a particle within the text bounding box.
-   * @returns {Particle} A new particle instance.
+   * @returns {Particle | null} A new particle instance.
    */
-  spawnInTextBoundingBox() {
-    // Get standardized bounding box.
-    const bounds = this.getTextBounds();
+  spawnInTextBoundingBox(bounds = this.getTextBounds()) {
     const {
       left: boxLeft,
       right: boxRight,
@@ -938,10 +957,22 @@ class ParticleTextEngine {
       bottom: boxBottom,
     } = bounds;
 
-    // For debugging: spawn anywhere in the bounding box area.
-    // This bypasses text overlap checking to see if that's the issue.
-    const x = boxLeft + Math.random() * (boxRight - boxLeft);
-    const y = boxTop + Math.random() * (boxBottom - boxTop);
+    const getPointInBox = () => {
+      const x = boxLeft + Math.random() * (boxRight - boxLeft);
+      const y = boxTop + Math.random() * (boxBottom - boxTop);
+      return [x, y];
+    };
+
+    // Text overlap checking.
+    let [x, y] = getPointInBox();
+    let attempts = 0;
+    while (Particle.isInsideText(x, y, this.textBounds, 1)) {
+      attempts++;
+      if (attempts > 10) {
+        return null;
+      }
+      [x, y] = getPointInBox();
+    }
 
     return new Particle(x, y, this);
   }
@@ -950,17 +981,19 @@ class ParticleTextEngine {
    * Updates all particles and handles respawning.
    */
   update() {
-    // Cache mouse interaction values for this frame to avoid recalculating for
-    // every particle.
-    this.cachedMouseForceRadius = this.getMouseForceRadius();
-    this.cachedIsMouseOnScreen = this.isMouseOnScreen();
-
     // Update particles and handle respawning.
-    for (let i = 0; i < this.particles.length; i++) {
-      if (!this.particles[i].update()) {
-        // Particle went off screen; replace with new one.
-        this.particles[i] = this.spawnSingleParticle();
+    const particlesToRemove = [];
+    for (const particle of this.particles) {
+      if (!particle.update()) {
+        // Particle went off screen; mark for replacement.
+        particlesToRemove.push(particle);
       }
+    }
+
+    // Remove dead particles and add new ones.
+    for (const deadParticle of particlesToRemove) {
+      this.particles.delete(deadParticle);
+      this.particles.add(this.spawnSingleParticle());
     }
   }
 
@@ -1009,7 +1042,6 @@ class ParticleTextEngine {
       this.ctx.save();
       this.ctx.strokeStyle = "#00FF00"; // Bright green for visibility.
       this.ctx.lineWidth = 2;
-      this.ctx.setLineDash([5, 5]); // Dashed line.
       this.ctx.strokeRect(
         bounds.left,
         bounds.top,
@@ -1019,7 +1051,6 @@ class ParticleTextEngine {
 
       // Draw center cross for reference.
       this.ctx.strokeStyle = "#FF0000"; // Red center marker.
-      this.ctx.setLineDash([]); // Solid line.
       this.ctx.lineWidth = 1;
       // Horizontal line.
       this.ctx.beginPath();
@@ -1040,7 +1071,6 @@ class ParticleTextEngine {
       this.ctx.save();
       this.ctx.strokeStyle = "#FF6600"; // Orange for mouse interaction.
       this.ctx.lineWidth = 2;
-      this.ctx.setLineDash([3, 3]); // Dashed circle.
       this.ctx.beginPath();
       this.ctx.arc(
         this.mouseX,
@@ -1083,27 +1113,17 @@ class ParticleTextEngine {
 
     if (this.showDebug) {
       const bounds = this.getTextBounds();
-      debugInfo.push(`FPS: ${this.fps}`);
       debugInfo.push(
+        `FPS: ${this.fps}`,
         `Bounds: ${Math.round(bounds.totalWidth)}x${Math.round(
           bounds.totalHeight
         )}`,
-        `Particles: ${this.particles.length}`,
-        `Debug: On`
+        `Particles: ${this.particles.size}`,
+        `Debug: On`,
+        `Mouse Over: ${this.isMouseOverCanvas ? "Yes" : "No"}`,
+        `Mouse Down: ${this.isMouseDown ? "Yes" : "No"}`,
+        `Touch Active: ${this.isTouching ? "Yes" : "No"}`
       );
-
-      // Show interaction state.
-      if (this.isTouching) {
-        debugInfo.push(`Touch: Active`);
-        if (this.isMouseDown) {
-          debugInfo.push(`Touch: Dragging`);
-        }
-      } else if (this.isMouseOverCanvas) {
-        debugInfo.push(`Mouse: Hover`);
-        if (this.isMouseDown) {
-          debugInfo.push(`Mouse: Down`);
-        }
-      }
     } else if (this.showShortcuts) {
       debugInfo.push(`[M] = Toggle Light`);
       debugInfo.push(`[F] = Toggle Fade`);
