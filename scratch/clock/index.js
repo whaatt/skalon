@@ -66,6 +66,85 @@ const ENGINE_CONFIG = {
 };
 
 /**
+ * URL hash fragment utilities for preference management.
+ */
+class URLPreferences {
+  /**
+   * Gets a parameter from the URL hash fragment.
+   * @param {string} key - The parameter key.
+   * @returns {string | null} The parameter value or null if not found.
+   */
+  static getFromHash(key) {
+    const hash = window.location.hash.substring(1); // Remove the `#`.
+    if (!hash) return null;
+
+    const params = new URLSearchParams(hash);
+    return params.get(key);
+  }
+
+  /**
+   * Sets a parameter in the URL hash fragment.
+   * @param {string} key - The parameter key.
+   * @param {string} value - The parameter value.
+   */
+  static setInHash(key, value) {
+    const hash = window.location.hash.substring(1); // Remove the `#`.
+    const params = new URLSearchParams(hash);
+    params.set(key, value);
+
+    // Update the URL hash without triggering a page reload.
+    const newHash = params.toString();
+    history.replaceState(
+      null,
+      "",
+      newHash ? `#${newHash}` : window.location.pathname
+    );
+  }
+
+  /**
+   * Loads a boolean preference with URL hash priority.
+   * @param {string} key - The preference key.
+   * @param {boolean} defaultValue - The default value if not found anywhere.
+   * @returns {boolean} The preference value.
+   */
+  static loadBooleanPreference(key, defaultValue) {
+    // Check URL hash first.
+    const hashValue = this.getFromHash(key);
+    if (hashValue !== null) {
+      const boolValue = hashValue === "true";
+      // Sync to `localStorage`.
+      localStorage.setItem(key, boolValue.toString());
+      return boolValue;
+    }
+
+    // Check `localStorage` second.
+    const stored = localStorage.getItem(key);
+    if (stored !== null) {
+      const boolValue = stored === "true";
+      // Sync to URL hash.
+      this.setInHash(key, boolValue.toString());
+      return boolValue;
+    }
+
+    // Use default value and sync to both.
+    this.setInHash(key, defaultValue.toString());
+    localStorage.setItem(key, defaultValue.toString());
+    return defaultValue;
+  }
+
+  /**
+   * Saves a boolean preference to both localStorage and URL hash.
+   * @param {string} key - The preference key.
+   * @param {boolean} value - The preference value.
+   */
+  static saveBooleanPreference(key, value) {
+    const stringValue = value.toString();
+    localStorage.setItem(key, stringValue);
+    this.setInHash(key, stringValue);
+  }
+}
+
+/**
  * Represents a single particle in the text engine.
  */
 class Particle {
@@ -578,91 +657,72 @@ class ParticleTextEngine {
   }
 
   /**
-   * Loads light mode preference from localStorage or system preference.
+   * Loads light mode preference from URL hash, `localStorage`, or system
+   * preference.
    * @returns {boolean} True for light mode; false for dark mode.
    */
   loadLightModePreference() {
-    // Check `localStorage` first.
-    const stored = localStorage.getItem("lightMode");
-    if (stored !== null) {
-      return stored === "true";
-    }
-
-    // Fall back to system preference.
-    return !window.matchMedia("(prefers-color-scheme: dark)").matches;
+    // Check URL hash first, then localStorage, then system preference.
+    const systemDefault = !window.matchMedia("(prefers-color-scheme: dark)")
+      .matches;
+    return URLPreferences.loadBooleanPreference("lightMode", systemDefault);
   }
 
   /**
-   * Saves light mode preference to `localStorage`.
+   * Saves light mode preference to both `localStorage` and URL hash.
    */
   saveLightModePreference() {
-    localStorage.setItem("lightMode", this.isLightMode.toString());
+    URLPreferences.saveBooleanPreference("lightMode", this.isLightMode);
   }
 
   /**
-   * Loads trail fade preference from `localStorage`.
+   * Loads trail fade preference from URL hash, `localStorage`, or default.
    * @returns {boolean} True for high trail fade (0.01); false for low (0.0001).
    */
   loadTrailFadePreference() {
-    // Check `localStorage` first.
-    const stored = localStorage.getItem("trailFade");
-    if (stored !== null) {
-      return stored === "true";
-    }
-
-    // Default to low trail fade.
-    return false;
+    // Check URL hash first, then localStorage, then default to low trail fade.
+    return URLPreferences.loadBooleanPreference("trailFade", false);
   }
 
   /**
-   * Saves trail fade preference to `localStorage`.
+   * Saves trail fade preference to both `localStorage` and URL hash.
    */
   saveTrailFadePreference() {
-    localStorage.setItem("trailFade", this.isHighTrailFade.toString());
+    URLPreferences.saveBooleanPreference("trailFade", this.isHighTrailFade);
   }
 
   /**
-   * Loads shortcuts preference from `localStorage`.
+   * Loads shortcuts preference from URL hash, `localStorage`, or default.
    * @returns {boolean} True to show shortcuts; false to hide them.
    */
   loadShortcutsPreference() {
-    // Check `localStorage` first.
-    const stored = localStorage.getItem("showShortcuts");
-    if (stored !== null) {
-      return stored === "true";
-    }
-
-    // Default to showing shortcuts.
-    return true;
+    // Check URL hash first, then `localStorage`, then default to showing
+    // shortcuts.
+    return URLPreferences.loadBooleanPreference("showShortcuts", true);
   }
 
   /**
-   * Saves shortcuts preference to `localStorage`.
+   * Saves shortcuts preference to both `localStorage` and URL hash.
    */
   saveShortcutsPreference() {
-    localStorage.setItem("showShortcuts", this.showShortcuts.toString());
+    URLPreferences.saveBooleanPreference("showShortcuts", this.showShortcuts);
   }
 
   /**
-   * Loads show seconds preference from `localStorage`.
+   * Loads show seconds preference from URL hash, `localStorage`, or default.
    * @returns {boolean} True to show seconds; false to hide them.
    */
   loadShowSecondsPreference() {
-    // Check `localStorage` first.
-    const stored = localStorage.getItem("showSeconds");
-    if (stored !== null) {
-      return stored === "true";
-    }
-
-    // Default to showing seconds.
-    return true;
+    // Check URL hash first, then `localStorage`, then default to showing
+    // seconds.
+    return URLPreferences.loadBooleanPreference("showSeconds", true);
   }
 
   /**
-   * Saves show seconds preference to `localStorage`.
+   * Saves show seconds preference to both `localStorage` and URL hash.
    */
   saveShowSecondsPreference() {
-    localStorage.setItem("showSeconds", this.showSeconds.toString());
+    URLPreferences.saveBooleanPreference("showSeconds", this.showSeconds);
   }
 
   /**
