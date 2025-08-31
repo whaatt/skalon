@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+  <head>
+    <!-- Page Info -->
+    <title>ascii doodle</title>
+    <link rel="canonical" href="https://skalon.com/2024/01/06/" />
+    <meta
+      name="description"
+      content="yet another tiny paint app for ascii art"
+    />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "datePublished": "2024-01-06T00:00:00Z",
+        "dateModified": "2024-02-06T00:00:00Z"
+      }
+    </script>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+
+    <!-- Icons -->
+    <meta name="apple-mobile-web-app-title" content="Skalon" />
+    <meta name="application-name" content="Skalon" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <meta name="msapplication-TileColor" content="#2d89ef" />
+    <meta name="theme-color" content="#ffffff" />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/vendor/normalize.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Slab&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/vendor/coloris.min.css" />
+    <link rel="stylesheet" href="css/canvas.css?version=5" />
+    <link rel="stylesheet" href="css/index.css?version=5" />
+  </head>
+  <body>
+    <div id="content">
+      <div id="header">
+        ~~~~~~~~~~~~~~~~~~~~~~
+        <br />
+        # <a href="/2022/01/08">Prev</a>...<a href="/">Home</a>...<a
+          href="/2025/04/21"
+          >Next</a
+        >
+        #
+        <br />
+        ~~~~~~~~~~~~~~~~~~~~~~
+        <br />
+        # <span class="title">ascii doodle 0.0.1</span> #
+        <br />
+        ~~~~~~~~~~~~~~~~~~~~~~
+        <br />
+        # >>>>
+        <a href="shortcuts.txt?version=2" target="_blank">shortcuts.txt</a> #
+        <br />
+        ~~~~~~~~~~~~~~~~~~~~~~
+      </div>
+      <div class="controls">
+        <div id="disclaimer">
+          Best viewed on desktop or a wider screen for the full set of controls!
+        </div>
+        <div class="controls-line">
+          <input
+            id="character-picker"
+            type="text"
+            value="#"
+            placeholder="⎵"
+            maxlength="1"
+          />
+          <input id="color-picker" type="text" data-coloris value="#000000" />
+          <label class="draw-option" for="draw-option-erase">
+            <input
+              type="checkbox"
+              id="draw-option-erase"
+              name="draw-option-erase"
+              class="control-button"
+            />
+            <label for="draw-option-erase"
+              ><img id="erase-image" src="assets/eraser.svg"
+            /></label>
+          </label>
+          <div class="navigation-item separator-container">
+            <span class="separator">//</span
+            ><button
+              type="button"
+              id="undo"
+              class="control-button hide-narrow"
+              disabled
+            >
+              ←
+            </button>
+          </div>
+          <button
+            type="button"
+            id="redo"
+            class="navigation-item control-button"
+            disabled
+          >
+            →
+          </button>
+          <button
+            type="button"
+            id="reset-canvas"
+            class="navigation-item control-button"
+          >
+            ⦸
+          </button>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <label class="draw-option" for="draw-option-fill">
+              <input
+                type="checkbox"
+                id="draw-option-fill"
+                name="draw-option-fill"
+                data-fill-mode="Fill"
+                class="control-button fill-mode"
+              />
+              <label for="draw-option-fill">Rect</label>
+            </label>
+          </div>
+          <label class="draw-option" for="draw-option-lasso">
+            <input
+              type="checkbox"
+              id="draw-option-lasso"
+              name="draw-option-lasso"
+              data-fill-mode="Lasso"
+              class="control-button fill-mode"
+            />
+            <label for="draw-option-lasso">Lasso</label>
+          </label>
+          <label class="draw-option" for="draw-option-bucket">
+            <input
+              type="checkbox"
+              id="draw-option-bucket"
+              name="draw-option-bucket"
+              data-fill-mode="Bucket"
+              class="control-button fill-mode"
+            />
+            <label for="draw-option-bucket">Bucket</label>
+          </label>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <label class="draw-option" for="draw-option-color" data-active>
+              <input
+                type="checkbox"
+                id="draw-option-color"
+                name="draw-option-color"
+                data-mask-mode="Color"
+                class="control-button mask-mode"
+              />
+              <label for="draw-option-color">Recolor</label>
+            </label>
+          </div>
+          <label class="draw-option" id="copy" for="draw-option-copy">
+            <input
+              type="checkbox"
+              id="draw-option-copy"
+              name="draw-option-copy"
+              data-mask-mode="Copy"
+              class="control-button mask-mode"
+            />
+            <label for="draw-option-copy">Copy</label>
+          </label>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <label class="draw-option" for="draw-option-paste" data-active>
+              <input
+                type="checkbox"
+                id="draw-option-paste"
+                name="draw-option-paste"
+                class="control-button"
+              />
+              <label for="draw-option-paste">Paste</label>
+            </label>
+          </div>
+        </div>
+      </div>
+      <pre id="canvas"></pre>
+      <div class="controls controls-bottom">
+        <div class="controls-line">
+          <button
+            type="button"
+            class="control-button edit-mode"
+            data-edit-mode="Draw"
+            data-active
+          >
+            Draw
+          </button>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <button
+              type="button"
+              class="control-button edit-mode"
+              data-edit-mode="GrabHtml"
+            >
+              Export HTML
+            </button>
+          </div>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <button
+              type="button"
+              class="control-button edit-mode"
+              data-edit-mode="GrabText"
+            >
+              Export Text
+            </button>
+          </div>
+          <div class="separator-container">
+            <span class="separator">//</span>
+            <button type="button" id="import-clip" class="control-button">
+              Import Clip
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="published">6 January 2024</div>
+    </div>
+    <div id="modal-copy" class="modal" aria-hidden="true">
+      <div class="modal-overlay" tabindex="-1" data-micromodal-close>
+        <div class="modal-content" role="dialog" aria-modal="true">
+          <div class="controls">
+            <button
+              aria-label="Close Modal"
+              class="controls-line control-button"
+              data-micromodal-close
+            >
+              Discard Selection
+            </button>
+            <button
+              id="confirm-copy"
+              aria-label="Confirm Copy"
+              type="button"
+              class="controls-line control-button"
+            >
+              Grab To Clipboard
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="js/vendor/coloris.min.js"></script>
+    <script src="js/vendor/idbkvstore.min.js"></script>
+    <script src="js/vendor/micromodal.min.js"></script>
+    <script src="js/38/index.js" type="module"></script>
+  </body>
+</html>

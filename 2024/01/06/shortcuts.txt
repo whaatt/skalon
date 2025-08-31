@@ -1,0 +1,21 @@
+Keyboard shortcuts (replace [CMD] with [CTRL] on Windows):
+
+        [CMD + V]:  Hold and click to paste (if text copied or imported)
+        [CMD + X]:  Clear canvas
+        [CMD + Y]:  Redo
+        [CMD + Z]:  Undo
+[CMD + Shift + B]:  Set Bucket Mode (flood fill)
+[CMD + Shift + C]:  Set Copy Mask Mode (only for Paste Mode; not for clipboard)
+[CMD + Shift + D]:  Set Draw Mode
+[CMD + Shift + E]:  Set Recolor Mask (only changes cell colors)
+[CMD + Shift + R]:  Set Rect Mode (rectangular fill)
+[CMD + Shift + S]:  Set Lasso Mode (free-hand fill)
+[CMD + Shift + Z]:  Redo
+
+Tip: After importing your clipboard, you must use Paste Mode to actually apply
+     the text to the grid (while holding [CMD + V] or checking the Paste Mode
+     box manually, move your cursor around to preview the paste).
+
+Tip: Clipboard support may be wonky on iOS.
+
+Tip: Hold down [Shift] to flood fill diagonal neighbors in Bucket Mode.

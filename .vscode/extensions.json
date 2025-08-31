@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "foxundermoon.shell-format",
+    "piyushsarkar.sort-css-properties",
+    "mikeburgh.xml-format"
+  ]
+}

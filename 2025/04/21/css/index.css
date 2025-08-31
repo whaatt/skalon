@@ -1,0 +1,520 @@
+@import url("https://fonts.googleapis.com/css2?family=Delius+Swash+Caps&family=IBM+Plex+Serif:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap");
+
+html {
+  display: table;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  display: table-cell;
+  vertical-align: middle;
+  background: #f7f3f0;
+  width: 100%;
+  font-family: "Nunito", sans-serif;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+a {
+  color: darkred;
+  text-decoration: none;
+}
+
+a:visited {
+  color: darkred;
+}
+
+a[disabled] {
+  color: #aaa;
+}
+
+#content {
+  box-sizing: border-box;
+  padding: min(1.5rem, 2vw);
+  width: 100%;
+  height: 100%;
+}
+
+#aurafont-capture-container {
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+#aurafont-container {
+  display: flex;
+  position: relative;
+  row-gap: min(1.5rem, 2vw);
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  box-sizing: border-box;
+  margin: 0 auto;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.2);
+  border-radius: min(0.75rem, 1vw);
+  background: #f9f9f9;
+  padding: min(1.5rem, 2vw);
+  width: 100%;
+  min-width: 300px;
+  max-width: 800px;
+  height: 100%;
+  min-height: 240px;
+  max-height: 800px;
+  overflow: hidden;
+  scrollbar-width: none;
+}
+
+@keyframes title-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+#aurafont-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+#aurafont-title {
+  background: linear-gradient(
+    to right,
+    brown 0%,
+    orange 20%,
+    darkred 66%,
+    brown 100%
+  );
+  background-clip: text;
+  width: fit-content;
+  color: transparent;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 2rem;
+  font-family: "Delius Swash Caps", cursive;
+  -webkit-background-clip: text;
+  animation: title-animation 1s ease-in-out normal forwards;
+  background-size: 200% auto;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 1rem rgba(0, 0, 0, 0.2);
+}
+
+.aurafont-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+}
+
+@media (hover: hover), (-ms-high-contrast: none) {
+  .aurafont-button:hover {
+    cursor: pointer;
+  }
+}
+
+.aurafont-header-buttons {
+  display: flex;
+  column-gap: 0.5rem;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.aurafont-header-button {
+  border: 1px solid transparent;
+  border-radius: min(0.5rem, 0.67vw);
+  background: #fff;
+  width: 3rem;
+  height: 2.5rem;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+@media (hover: hover), (-ms-high-contrast: none) {
+  .aurafont-header-button:hover {
+    box-shadow: 0 0 0.5rem rgba(54, 51, 255, 1);
+  }
+}
+
+#aurafont-keyboard-button {
+  background: #fed1e2;
+}
+
+#aurafont-keyboard-button-text {
+  border: 1px solid black;
+  border-radius: min(0.25rem, 0.33vw);
+  padding: 0.25rem;
+  font-weight: bold;
+  font-size: 0.6rem;
+  font-family: "Nunito", sans-serif;
+}
+
+#aurafont-keyboard-button.aurafont-keyboard-button-active {
+  border: 1px solid rgba(54, 51, 255, 1);
+}
+
+#aurafont-controls-button {
+  transition: transform 0.25s ease-in-out;
+  background: #d1e2fe;
+}
+
+#aurafont-controls-button.aurafont-controls-button-clicked {
+  transform: rotateZ(179.9deg);
+}
+
+#aurafont-controls-button.aurafont-controls-button-active {
+  background: #fee2d1;
+}
+
+#aurafont-card {
+  position: relative;
+  flex-grow: 1;
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+  width: 100%;
+  min-height: 7rem;
+}
+
+#aurafont-card.aurafont-card-flipped {
+  transform: perspective(max(50vw, 50vh)) rotateY(180deg);
+}
+
+#aurafont-canvas {
+  position: absolute;
+  backface-visibility: hidden;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+  border-radius: min(0.5rem, 0.67vw);
+  background: #fee2d1;
+  width: 100%;
+  height: 100%;
+  font-family: "IBM Plex Serif", serif;
+}
+
+#aurafont-manager {
+  margin: 1rem;
+  width: calc(100% - 2rem);
+  height: calc(100% - 2rem);
+  overflow: scroll;
+  scrollbar-width: none;
+  -webkit-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
+}
+
+#aurafont-keyboard {
+  display: flex;
+  row-gap: min(0.5rem, 1vw);
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  margin-top: calc(max(-1.5rem, -2vw) - 0.3rem);
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+  border: 1px solid #eee;
+  border-radius: min(0.5rem, 0.67vw);
+  border-top-right-radius: 0;
+  border-top-left-radius: 0;
+  background: #fed1e2;
+  padding: min(0.5rem, 1vw);
+  width: 100%;
+}
+
+#aurafont-keyboard.aurafont-keyboard-hidden {
+  display: none;
+}
+
+#aurafont-keyboard-disclaimer {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.keyboard-row {
+  display: flex;
+  column-gap: min(0.5rem, 1vw);
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.key {
+  display: flex;
+  position: relative;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+  border: 1px solid transparent;
+  border-radius: min(0.25rem, 0.33vw);
+  background: #fff;
+  padding: 0.1rem;
+  height: 3em;
+  font-size: 0.8rem;
+  font-family: "Nunito", sans-serif;
+  text-align: center;
+}
+
+/* Hack for larger touch targets. */
+.key:before {
+  position: absolute;
+  top: max(-0.25rem - 0.25rem, -0.5vw - 0.25rem);
+  left: max(-0.25rem - 0.25rem, -0.5vw - 0.25rem);
+  background: transparent;
+  width: calc(100% + min(0.5rem, 1vw) + 0.5rem);
+  height: calc(100% + min(0.5rem, 1vw) + 0.5rem);
+  content: "";
+}
+
+@media (hover: hover), (-ms-high-contrast: none) {
+  .key:hover {
+    border: 1px solid rgba(54, 51, 255, 1);
+  }
+}
+
+.key.key-active {
+  background: rgba(54, 51, 255, 1);
+  color: #fff;
+}
+
+#aurafont-controls {
+  position: absolute;
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+  box-sizing: border-box;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+  border-radius: min(0.5rem, 0.67vw);
+  background: #d1e2fe;
+  width: 100%;
+  height: 100%;
+}
+
+.aurafont-transformers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 1rem;
+  width: calc(100% - 2rem);
+  height: calc(100% - 2rem);
+  overflow: scroll;
+  scrollbar-width: none;
+}
+
+.aurafont-transformer-option {
+  cursor: pointer;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: min(0.5rem, 0.67vw);
+  background: #fff;
+  padding: 1rem;
+  width: 100%;
+}
+
+.aurafont-transformer-option:not(:last-of-type) {
+  margin-bottom: 0.5rem;
+}
+
+@media (hover: hover), (-ms-high-contrast: none) {
+  .aurafont-transformer-option:not(
+      .aurafont-transformer-option-selected,
+      .aurafont-transformer-option-not-configured
+    ):hover {
+    border: 1px dotted rgba(54, 51, 255, 1);
+  }
+}
+
+.aurafont-transformer-option.aurafont-transformer-option-selected:not(
+    .aurafont-transformer-option-not-configured
+  ) {
+  border: 1px solid rgba(54, 51, 255, 1);
+}
+
+.aurafont-transformer-option.aurafont-transformer-option-not-configured {
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.aurafont-transformer-option-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.aurafont-transformer-option-name {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.aurafont-transformer-option-description {
+  margin-top: 0.4rem;
+  font-size: 1rem;
+}
+
+.aurafont-transformer-option-button {
+  transition: background-color 0.2s;
+  cursor: pointer;
+  border-radius: min(0.5rem, 0.67vw);
+  background: #000;
+  padding: 0.4rem;
+  color: #fff;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.aurafont-transformer-option-button:hover {
+  box-shadow: 0 0 0.5rem rgba(54, 51, 255, 1);
+}
+
+@keyframes snake-animation {
+  0% {
+    transform: translateY(calc(sin(var(--i) * 2 * 3.15 / 5) * 0.25rem * 2));
+  }
+  50% {
+    transform: translateY(calc(sin(var(--i) * 2 * 3.15 / 5) * 0.25rem * -2));
+  }
+  100% {
+    transform: translateY(calc(sin(var(--i) * 2 * 3.15 / 5) * 0.25rem * 2));
+  }
+}
+
+#aurafont-transformer-option-name-snake > span {
+  display: inline-block;
+  animation: snake-animation 3s ease-in-out infinite;
+  color: green;
+}
+
+#aurafont-transformer-option-name-snake > span:nth-child(3n + 1) {
+  color: darkred;
+}
+
+#aurafont-transformer-option-name-snake > span:nth-child(3n + 2) {
+  color: goldenrod;
+}
+
+@keyframes inflation-demo-animation {
+  0% {
+    transform: scale(0.7);
+  }
+  50% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0.7);
+  }
+}
+
+#aurafont-inflation-demo {
+  display: inline-block;
+  transform: scale(0.7);
+  transform-origin: bottom left;
+  animation: inflation-demo-animation 4s ease-in-out infinite;
+  color: red;
+}
+
+#aurafont-interval-colorizer-1 {
+  color: hsl(0, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-2 {
+  margin-left: 0.05rem;
+  color: hsl(20, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-3 {
+  margin-left: 0.1rem;
+  color: hsl(50, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-4 {
+  margin-left: 0.15rem;
+  color: hsl(70, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-5 {
+  margin-left: 0.2rem;
+  color: hsl(80, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-6 {
+  margin-left: 0.25rem;
+  color: hsl(180, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-7 {
+  margin-left: 0.3rem;
+  color: hsl(190, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-8 {
+  margin-left: 0.35rem;
+  color: hsl(200, 100%, 40%);
+}
+
+#aurafont-interval-colorizer-9 {
+  margin-left: 0.4rem;
+  color: hsl(210, 100%, 40%);
+}
+
+/* #aurafont-canvas::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0.4;
+  border-radius: min(0.5rem, 0.67vw);
+  background-image: url(noise.svg);
+  background-size: 182px;
+  background-repeat: repeat;
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  content: "";
+} */
+
+.text-glyph {
+  display: inline-block;
+  /* TODO: Should this be applied by the transformer? */
+  transition: font-size 0.1s ease-out, transform 0.05s linear;
+}
+
+.text-word {
+  display: inline-block;
+  word-wrap: break-word;
+}
+
+.text-inline-wrapper {
+  display: inline;
+  word-wrap: break-word;
+}
+
+@keyframes cursor-blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.current-glyph::after {
+  display: inline-block;
+  animation: cursor-blink 1s ease-in-out infinite;
+  background: brown;
+  content: "\00a0";
+}
+
+#navigation {
+  display: flex;
+  column-gap: 1.5rem;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+#published {
+  display: none;
+}

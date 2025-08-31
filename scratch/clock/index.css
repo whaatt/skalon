@@ -1,0 +1,29 @@
+body {
+  margin: 0;
+  background: #000;
+  padding: 0;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+canvas {
+  display: block;
+}
+
+#debug-overlay:empty {
+  display: none;
+}
+
+#debug-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 10;
+  background-color: black;
+  padding: 5px;
+  pointer-events: none;
+  color: white;
+  font-size: 14px;
+  line-height: 1.4;
+  font-family: monospace;
+}

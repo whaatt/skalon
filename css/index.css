@@ -1,0 +1,143 @@
+@font-face {
+  src: url("fonts/Sk-Modernist Regular.otf") format("opentype");
+  font-family: "Modernist";
+  font-display: swap;
+}
+
+@font-face {
+  font-weight: bold;
+  src: url("fonts/Sk-Modernist Bold.otf") format("opentype");
+  font-family: "Modernist";
+  font-display: swap;
+}
+
+@font-face {
+  src: url("fonts/Sk-Modernist Mono.otf") format("opentype");
+  font-family: "Modernist Mono";
+  font-display: swap;
+}
+
+html,
+body {
+  overflow-x: hidden;
+  font-size: 18px;
+}
+
+@media (max-width: 320px) {
+  html,
+  body {
+    font-size: 16px;
+  }
+}
+
+body.dark {
+  background: #111;
+  color: #eee;
+}
+
+a {
+  color: blue;
+  text-decoration: none;
+}
+
+.dark a {
+  color: #ff0099;
+}
+
+a:visited {
+  color: blue;
+}
+
+.dark a:visited {
+  color: #ff0099;
+}
+
+a.post-link {
+  display: inline-block;
+  width: 180px;
+}
+
+span.outbound-arrow {
+  display: inline-block;
+  transform: rotate(-45deg);
+}
+
+pre {
+  font-family: "Modernist Mono", monospace;
+}
+
+.date {
+  width: 140px;
+  font-size: 90%;
+  font-family: "Modernist Mono", monospace;
+}
+
+.section-divider {
+  margin-top: 15px;
+}
+
+#art {
+  margin-top: 25px;
+  margin-bottom: 30px;
+  font-size: 70%;
+  line-height: 1;
+}
+
+#art span.bridge {
+  color: red;
+}
+
+#art span.bird {
+  color: gray;
+}
+
+#art span.incomplete {
+  color: #dddddd;
+}
+
+.dark #art span.incomplete {
+  color: #333333;
+}
+
+#art span.rail {
+  color: goldenrod;
+}
+
+#art span.stone {
+  color: saddlebrown;
+}
+
+#art span.water {
+  color: darkcyan;
+}
+
+#content {
+  padding: 20px;
+  width: 576px;
+  font-family: "Modernist", sans-serif;
+}
+
+#published {
+  display: none;
+}
+
+#title {
+  font-weight: bold;
+  font-size: 120%;
+  text-align: left;
+}
+
+#title-highlight {
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  display: inline-block;
+  background: black;
+  padding: 5px;
+  color: white;
+  user-select: none;
+}
+
+.dark #title-highlight {
+  background: #eee;
+  color: #111;
+}

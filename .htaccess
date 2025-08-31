@@ -1,0 +1,61 @@
+RewriteEngine On
+
+# DEPRECATED: Redundant with Cloudflare.
+# Enforce HTTPS on all URIs.
+# RewriteCond %{HTTPS} !=on
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,NC,NE,R=301]
+
+# Redirect WWW to non-WWW.
+RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+RewriteRule ^(.*)$ https://%1/$1 [L,NC,NE,R=301]
+
+# Canonicalize URLs to have at most one slash in a row.
+RewriteCond %{THE_REQUEST} \s[^?]*//
+RewriteRule ^(.*)$ /$1 [L,NC,NE,R=301]
+
+# Rewrite directory indexes to their parent directories.
+RewriteRule ^index\.html$ / [L,NC,NE,R=301]
+RewriteRule ^(.*)/index\.html$ /$1/ [L,NC,NE,R=301]
+
+# DEPRECATED: Redirect nonexistent root directory files to the directory of the
+# latest post.
+# RewriteRule ^(/*)$ /2022/01/08/ [L,NC,NE,R=307]
+# RewriteCond %{REQUEST_URI} !^/.*/.*$
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteRule ^(.*)$ /2022/01/08/$1 [L,NC,NE,R=307]
+
+# Canonicalize valid directory URLs to have at least one trailing slash.
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*[^/])$ /$1/ [L,NC,NE,R=301]
+
+# Permanently redirect `temp` to `scratch`.
+RewriteRule ^temp$ /scratch/ [L,NC,NE,R=301]
+RewriteRule ^temp/(.*)$ /scratch/$1 [L,NC,NE,R=301]
+
+# DEPRECATED: We want Cloudflare caching.
+# Disable caching of most static files.
+# <IfModule mod_headers.c>
+#     Header set Cache-Control "no-cache, no-store, must-revalidate"
+#     Header set Pragma "no-cache"
+#     Header set Expires 0
+# </IfModule>
+# <FilesMatch "\.(css|flv|gif|htm|html|ico|jpe|jpeg|jpg|js|mp3|mp4|png|pdf|swf|txt)$">
+#     <IfModule mod_expires.c>
+#         ExpiresActive Off
+#     </IfModule>
+#     <IfModule mod_headers.c>
+#         FileETag None
+#         Header unset ETag
+#         Header unset Pragma
+#         Header unset Cache-Control
+#         Header unset Last-Modified
+#         Header set Pragma "no-cache"
+#         Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+#         Header set Expires "Thu, 1 Jan 1970 00:00:00 GMT"
+#     </IfModule>
+# </FilesMatch>
+
+# Redirect 404s to the home page.
+ErrorDocument 404 https://skalon.com

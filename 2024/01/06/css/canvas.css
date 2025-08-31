@@ -1,0 +1,21 @@
+.ascii-canvas-cell {
+  -webkit-user-select: none;
+  display: inline-block;
+  cursor: cell;
+  border: 1px dotted #ddd;
+  user-select: none;
+}
+
+.ascii-canvas-cell.highlight-selection {
+  background-color: #000;
+  /* Legacy styling. */
+  /* color: white !important; */
+}
+
+.ascii-canvas-cell.highlight-boundary {
+  background-color: #aaa;
+}
+
+.ascii-canvas-cell.highlight-paste {
+  background-color: #eee;
+}

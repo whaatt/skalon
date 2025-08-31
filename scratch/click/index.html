@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+  <head>
+    <!-- Page Info -->
+    <title>click</title>
+    <link rel="canonical" href="https://skalon.com/temp/click/" />
+    <meta name="description" content="scratch page for click demo" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "datePublished": "2024-02-20T00:00:00Z",
+        "dateModified": "2025-03-25T00:00:00Z"
+      }
+    </script>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+
+    <!-- Icons -->
+    <meta name="apple-mobile-web-app-title" content="Skalon" />
+    <meta name="application-name" content="Skalon" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <meta name="msapplication-TileColor" content="#2d89ef" />
+    <meta name="theme-color" content="#ffffff" />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/vendor/normalize.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="index.css?version=2" />
+
+    <!-- Scripts -->
+    <script src="//unpkg.com/tone"></script>
+  </head>
+  <body>
+    <div id="click-area"></div>
+    <div class="slider-label">
+      Pan Range: [<span id="value-min-pan">-1</span>,
+      <span id="value-max-pan">1</span>]
+    </div>
+    <div class="slider-container">
+      <input
+        type="range"
+        min="0"
+        max="1"
+        value="0"
+        step="0.01"
+        class="slider"
+        id="pan-width"
+      />
+    </div>
+    <div class="slider-label">
+      Low-Pass Cutoff: <span id="value-low-pass">20000</span> Hz
+    </div>
+    <div class="slider-container">
+      <input
+        type="range"
+        min="100"
+        max="20000"
+        step="100"
+        value="20000"
+        class="slider"
+        id="low-pass"
+      />
+    </div>
+    <label class="custom-file-upload">
+      <input id="file-input" type="file" />
+      <div id="file-input-label">Use Custom Sound</div>
+    </label>
+    <script src="index.js"></script>
+  </body>
+</html>
