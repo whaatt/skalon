@@ -1,0 +1,201 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: crosshair;
+  background: #fddcf0;
+  min-width: 375px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: "Inter", sans-serif;
+  letter-spacing: -0.05cap;
+}
+
+#flies {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#content {
+  padding: 2.25rem;
+  padding-top: 1.5rem;
+  min-height: fit-content;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+#slant {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: start;
+  transform: skewX(-10deg);
+  cursor: initial;
+}
+
+#logo-container {
+  position: relative;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#logo {
+  filter: contrast(150%);
+  background: rgba(153, 153, 255, 0.6);
+  width: 256px;
+  height: 256px;
+}
+
+#logo-crosshair {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  background: radial-gradient(
+      circle at 50% 50%,
+      transparent 0px 100px,
+      rgba(255, 64, 128, 0.8) 100px 102px,
+      transparent 102px 102px
+    ),
+    linear-gradient(
+      to right,
+      transparent 126.5px,
+      rgba(255, 64, 128, 0.8) 127px,
+      rgba(255, 64, 128, 0.8) 129px,
+      transparent 129.5px
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 126.5px,
+      rgba(255, 64, 128, 0.8) 127px,
+      rgba(255, 64, 128, 0.8) 129px,
+      transparent 129.5px
+    );
+  width: 256px;
+  height: 256px;
+}
+
+#header {
+  text-align: left;
+}
+
+#title {
+  margin: 0;
+  margin-left: -0.15rem;
+  font-size: 4.25rem;
+}
+
+#tagline {
+  margin-top: -0.45rem;
+  margin-bottom: 1rem;
+  margin-left: 0.01rem;
+  font-size: 20px;
+}
+
+#buttons {
+  display: block;
+  transform: skewX(25deg);
+  margin-left: 2.43rem;
+}
+
+.button {
+  display: block;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  border: 2px solid black;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 14px 22px;
+  width: 256px;
+  color: black;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.button:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.button-text {
+  display: block;
+  transform: skewX(-17deg);
+}
+
+#requirements {
+  font-weight: normal;
+  font-size: 0.7rem;
+}
+
+#download {
+  margin-top: calc(1rem - 2px);
+}
+
+#download.flash {
+  animation: flash 0.5s ease-in-out infinite;
+}
+
+@keyframes flash {
+  0% {
+    background: rgba(255, 0, 255, 0);
+  }
+  25% {
+    background: rgba(255, 0, 255, 0.4);
+  }
+  50% {
+    background: rgba(255, 0, 255, 0);
+  }
+  75% {
+    background: rgba(255, 0, 255, 0.4);
+  }
+  100% {
+    background: rgba(255, 0, 255, 0);
+  }
+}
+
+#navigation {
+  display: flex;
+  column-gap: 1.5rem;
+  justify-content: space-between;
+  width: 100%;
+}
+
+#navigation > .button {
+  padding: 7px 11px;
+  width: unset;
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+#navigation > .button[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+#navigation > .button[disabled]:hover {
+  background: inherit;
+}
+
+#published {
+  display: none;
+}
+
+#acknowledgements {
+  display: none;
+}

@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://skalon.com</loc>
-    <lastmod>2025-07-03</lastmod>
+    <lastmod>2025-09-02</lastmod>
   </url>
   <url>
     <loc>https://skalon.com/2018/05/01/</loc>
@@ -42,7 +42,11 @@
   </url>
   <url>
     <loc>https://skalon.com/2025/04/21/</loc>
-    <lastmod>2025-05-05</lastmod>
+    <lastmod>2025-09-02</lastmod>
+  </url>
+  <url>
+    <loc>https://skalon.com/2025/09/01/</loc>
+    <lastmod>2025-09-02</lastmod>
   </url>
   <url>
     <loc>https://skalon.com/scratch/</loc>
