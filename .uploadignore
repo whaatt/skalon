@@ -1,4 +1,5 @@
 + .htaccess
++ **/.python-version
 - **/.*
 - README.md
 - stylelint.config.js

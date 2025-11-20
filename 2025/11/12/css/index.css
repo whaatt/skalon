@@ -1,0 +1,232 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Major+Mono+Display&display=swap");
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+}
+
+.button {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#loading-overlay {
+  display: flex;
+  position: absolute;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  transition: opacity 0.3s ease-out;
+  inset: 0;
+  background: #000;
+}
+
+#loading-text {
+  color: #fff;
+  font: 18px "Inter", system-ui, sans-serif;
+  font-weight: 500;
+}
+
+#sidebar-toggle {
+  display: inline-block;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  background: #eee;
+  padding: 8px;
+  color: #111;
+  font: 14px "Inter", system-ui, sans-serif;
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #sidebar-toggle:hover {
+    background: #111;
+    color: #eee;
+  }
+}
+
+#sidebar {
+  display: block;
+  position: absolute;
+  top: 48px;
+  left: 8px;
+}
+
+#sidebar.hidden {
+  display: none;
+}
+
+#title {
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  background: #eee;
+  padding: 8px 8px;
+  color: #111;
+  font: 36px "Major Mono Display", monospace;
+  text-transform: lowercase;
+}
+
+#navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font: 14px "Inter", system-ui, sans-serif;
+}
+
+#navigation > .button {
+  color: rgb(20, 75, 109);
+  text-decoration: none;
+}
+
+#navigation > #help {
+  color: rgb(215, 0, 72);
+  font-weight: bold;
+}
+
+#navigation > .button[disabled] {
+  color: #444;
+  text-decoration: none;
+}
+
+#tools {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+#generation-modes,
+#locations {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.tool,
+.generation-mode,
+.location,
+#score-button,
+#share-button {
+  display: flex;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  background: #eee;
+  padding: 8px 8px;
+  color: #111;
+  line-height: 1em;
+  text-decoration: none;
+}
+
+#score-button,
+#share-button {
+  margin-top: 8px;
+}
+
+.tool {
+  font: 32px "Inter", system-ui, sans-serif;
+}
+
+.generation-mode,
+.location,
+#score-button,
+#share-button {
+  font: 14px "Inter", system-ui, sans-serif;
+}
+
+.tool[disabled],
+.generation-mode[disabled],
+.location[disabled],
+#share-button[disabled] {
+  cursor: default;
+  box-shadow: 0 4px 16px 0 rgba(255, 255, 255, 0.4);
+  background: #111;
+  color: #eee;
+}
+
+#score-button[disabled] {
+  cursor: default;
+  background: greenyellow;
+}
+
+#score-button[disabled] > span {
+  font-weight: bold;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tool:not([disabled]):hover,
+  .generation-mode:not([disabled]):hover,
+  .location:not([disabled]):hover,
+  #score-button:not([disabled]):hover,
+  #share-button:not([disabled]):hover {
+    box-shadow: 0 4px 16px 0 rgba(255, 255, 255, 0.4);
+    background: #111;
+    color: #eee;
+  }
+}
+
+#map {
+  position: absolute;
+  inset: 0;
+}
+
+#tool-indicator {
+  display: none;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+#map.tool-active {
+  cursor: crosshair !important;
+}
+
+#map.tool-active canvas {
+  cursor: crosshair !important;
+}
+
+#published {
+  display: none;
+}
+
+#footer {
+  display: flex;
+  position: absolute;
+  bottom: 8px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+#disclaimer {
+  display: none;
+}
+
+@media screen and (max-width: 576px) and (max-height: 1024px) {
+  #disclaimer {
+    display: block;
+    box-shadow: 0 0 8px 0 rgba(255, 255, 255, 0.4);
+    border-radius: 8px;
+    background: #e55;
+    padding: 8px 8px;
+    color: #eee;
+    font: 14px "Inter", system-ui, sans-serif;
+  }
+}

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+  <head>
+    <!-- Page Info -->
+    <title>hillshade</title>
+    <link rel="canonical" href="https://skalon.com/2025/11/12/" />
+    <meta name="description" content="leg day for the mind" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "datePublished": "2025-11-12T00:00:00Z",
+        "dateModified": "2025-11-19T00:00:00Z"
+      }
+    </script>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+
+    <!-- Icons -->
+    <meta name="apple-mobile-web-app-title" content="Skalon" />
+    <meta name="application-name" content="Skalon" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <meta name="msapplication-TileColor" content="#2d89ef" />
+    <meta name="theme-color" content="#ffffff" />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/vendor/normalize.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://unpkg.com/maplibre-gl@5.12.0/dist/maplibre-gl.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/index.css?version=7" />
+  </head>
+  <body>
+    <div id="content">
+      <div id="map"></div>
+      <div id="loading-overlay">
+        <div id="loading-text">Loading (WebGL required)...</div>
+      </div>
+      <a id="sidebar-toggle" class="button" role="button">▼ Sidebar</a>
+      <div id="sidebar">
+        <div id="title">
+          Hillshade
+          <div id="navigation">
+            <a class="button" id="prev" href="/2025/09/01/">← Prev</a>
+            <a class="button" id="home" href="/">Home</a>
+            <a
+              class="button"
+              id="help"
+              href="https://github.com/whaatt/skalon/blob/master/2025/11/12/README.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Help</a
+            >
+            <a class="button" id="next" disabled>Next →</a>
+          </div>
+        </div>
+        <div id="locations">
+          <a
+            class="button location"
+            data-location="sf"
+            role="button"
+            href="?city=sf"
+          >
+            San Francisco
+          </a>
+          <a
+            class="button location"
+            data-location="nyc"
+            role="button"
+            href="?city=nyc"
+          >
+            New York City
+          </a>
+        </div>
+        <div id="generation-modes">
+          <div
+            class="button generation-mode"
+            data-generation-mode="flat"
+            role="button"
+          >
+            Flat Terrain
+          </div>
+          <div
+            class="button generation-mode"
+            data-generation-mode="actual"
+            role="button"
+          >
+            Actual
+          </div>
+          <div
+            class="button generation-mode"
+            data-generation-mode="random"
+            role="button"
+          >
+            Random
+          </div>
+        </div>
+        <div id="tools">
+          <div class="button tool" data-tool="pan" role="button">⊕</div>
+          <div class="button tool" data-tool="up" role="button" disabled>
+            ⛰ ↑
+          </div>
+          <div class="button tool" data-tool="down" role="button">⛰ ↓</div>
+        </div>
+        <div id="score-button" class="button" role="button">
+          Grade My Terrain Accuracy
+        </div>
+        <div id="share-button" class="button" role="button">
+          Share This Map View
+        </div>
+      </div>
+      <div id="footer">
+        <div id="disclaimer">Best viewed on a larger screen!</div>
+      </div>
+      <div id="published">12 November 2025</div>
+    </div>
+    <script src="https://unpkg.com/maplibre-gl@5.12.0/dist/maplibre-gl.js"></script>
+    <script src="js/8/index.js" type="module"></script>
+  </body>
+</html>
