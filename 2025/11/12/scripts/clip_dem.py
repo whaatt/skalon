@@ -18,7 +18,8 @@ DEM_SRC = f"dem_{DEM_STEP_STRING}_{LOCATION_SPECIFIER}.tif"
 BOUNDARY_SRC = f"boundary_{LOCATION_SPECIFIER}.geojson"
 
 DEM_BIN_DST = f"dem_{LOCATION_SPECIFIER}.bin"
-DEM_METADATA_DST = f"dem_{LOCATION_SPECIFIER}_metadata.json"
+# Remove the `.raw` suffix once the DEM metadata has been validated on a map.
+DEM_METADATA_DST = f"dem_{LOCATION_SPECIFIER}_metadata.raw.json"
 
 # This target CRS measures distances in meters (Mercator).
 TARGET_CRS = "EPSG:3857"
